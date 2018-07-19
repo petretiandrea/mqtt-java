@@ -2,6 +2,8 @@ package it.petretiandrea;
 
 import it.petretiandrea.core.*;
 import it.petretiandrea.core.packet.ConnAck;
+import it.petretiandrea.core.packet.Connect;
+import it.petretiandrea.core.packet.SubAck;
 import it.petretiandrea.core.packet.base.MQTTPacket;
 import it.petretiandrea.core.packet.Subscribe;
 
@@ -24,7 +26,6 @@ public class Main {
                 .setWillMessage(new Message("topicWill", "ciaoo", Qos.QOS_2, true))
                 .build();
 
-        byte[] bytes = PacketBuilder.buildConnectPacket(MQTTVersion.MQTT_311, settings);
 
         ServerSocket socketServer = new ServerSocket(1883);
 
@@ -45,7 +46,7 @@ public class Main {
                         socket.getOutputStream().write(new ConnAck(false, ConnectionStatus.ACCEPT).toByte());
                     else if(packet.getCommand() == MQTTPacket.Type.SUBSCRIBE) {
                         Subscribe sub = (Subscribe) packet;
-                        socket.getOutputStream().write(PacketBuilder.buildSubAck(sub.getMessageID(), sub.getQosSub()));
+                        socket.getOutputStream().write(new SubAck(sub.getMessageID(), sub.getQosSub()).toByte());
                     }
                     Thread.sleep(200);
                 }
@@ -56,14 +57,11 @@ public class Main {
 
         System.out.println(socket.isConnected());
         System.out.println("Sending...");
-        socket.getOutputStream().write(bytes);
+        socket.getOutputStream().write(new Connect(MQTTVersion.MQTT_311, settings).toByte());
         System.out.println("Writed...");
 
         Thread.sleep(3000);
-        //byte[] pub = PacketBuilder.buildPublishPacket(new Message("provatopic", "prova", Qos.QOS_1, false), false);
-        //socket.getOutputStream().write(pub);
-        byte[] sub = PacketBuilder.buildSubscribe("provatopic", Qos.QOS_1);
-        socket.getOutputStream().write(sub);
+        socket.getOutputStream().write(new Subscribe("provatopic", Qos.QOS_1).toByte());
         System.in.read();
     }
 }
