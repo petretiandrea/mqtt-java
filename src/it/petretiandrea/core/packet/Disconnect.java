@@ -1,0 +1,24 @@
+package it.petretiandrea.core.packet;
+
+import it.petretiandrea.common.Qos;
+import it.petretiandrea.core.packet.base.MQTTPacket;
+
+import java.io.UnsupportedEncodingException;
+
+import static it.petretiandrea.core.Utils.GenerateFixedHeader;
+
+public class Disconnect extends MQTTPacket {
+
+    public Disconnect() {
+        super(Type.DISCONNECT, false, Qos.QOS_0, false);
+    }
+
+    public Disconnect(byte[] packet) {
+        super(packet);
+    }
+
+    @Override
+    public byte[] toByte() throws UnsupportedEncodingException {
+        return GenerateFixedHeader(getCommand(), 0, isDup(), getQos().ordinal(), isRetain());
+    }
+}
