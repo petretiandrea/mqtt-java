@@ -1,4 +1,4 @@
-package it.petretiandrea.common;
+package it.petretiandrea.core;
 
 public class ConnectionSettingsBuilder {
     private String mClientId;

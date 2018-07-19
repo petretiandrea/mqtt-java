@@ -1,7 +1,7 @@
 package it.petretiandrea.core.packet;
 
-import it.petretiandrea.common.Message;
-import it.petretiandrea.common.Qos;
+import it.petretiandrea.core.Message;
+import it.petretiandrea.core.Qos;
 import it.petretiandrea.core.Utils;
 import it.petretiandrea.core.packet.base.MQTTPacket;
 

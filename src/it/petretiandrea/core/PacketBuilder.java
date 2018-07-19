@@ -1,9 +1,5 @@
 package it.petretiandrea.core;
 
-import it.petretiandrea.common.ConnectionSettings;
-import it.petretiandrea.common.MQTTVersion;
-import it.petretiandrea.common.Message;
-import it.petretiandrea.common.Qos;
 import it.petretiandrea.core.packet.base.MQTTPacket;
 
 import java.io.UnsupportedEncodingException;

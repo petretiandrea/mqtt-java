@@ -1,10 +1,8 @@
 package it.petretiandrea;
 
-import it.petretiandrea.common.*;
-import it.petretiandrea.core.ConnectionStatus;
+import it.petretiandrea.core.*;
 import it.petretiandrea.core.packet.ConnAck;
 import it.petretiandrea.core.packet.base.MQTTPacket;
-import it.petretiandrea.core.PacketBuilder;
 import it.petretiandrea.core.packet.Subscribe;
 
 import java.io.BufferedReader;

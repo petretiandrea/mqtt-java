@@ -1,11 +1,9 @@
 package it.petretiandrea.core.packet;
 
-import it.petretiandrea.common.Qos;
+import it.petretiandrea.core.Qos;
 import it.petretiandrea.core.packet.base.MQTTPacket;
 
 import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 import static it.petretiandrea.core.Utils.GenerateFixedHeader;
 import static it.petretiandrea.core.Utils.Join;

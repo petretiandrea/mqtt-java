@@ -1,4 +1,6 @@
-package it.petretiandrea.common;
+package it.petretiandrea.core;
+
+import it.petretiandrea.core.Message;
 
 public class ConnectionSettings {
 

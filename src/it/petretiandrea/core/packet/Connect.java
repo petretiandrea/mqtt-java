@@ -1,9 +1,6 @@
 package it.petretiandrea.core.packet;
 
-import it.petretiandrea.common.MQTTVersion;
-import it.petretiandrea.common.Message;
-import it.petretiandrea.common.Qos;
-import it.petretiandrea.core.Utils;
+import it.petretiandrea.core.*;
 import it.petretiandrea.core.packet.base.MQTTPacket;
 
 import java.io.UnsupportedEncodingException;
@@ -30,8 +27,16 @@ public class Connect extends MQTTPacket {
     private int mKeepAliveSeconds;
     private Message mWillMessage;
 
-    // TODO: Use Builder Pattern + version check of correct value.
-    public Connect(MQTTVersion MQTTVersion, String clientID, String protocolName, int protocolLevel,
+
+    public Connect(MQTTVersion mqttVersion, ConnectionSettings connectionSettings) {
+        this(mqttVersion, connectionSettings.getClientId(), (mqttVersion == MQTTVersion.MQTT_31) ? "MQIsdp" : "MQTT",
+                (mqttVersion == MQTTVersion.MQTT_31) ? 3 : 4, connectionSettings.getUsername(),
+                connectionSettings.getPassword(), connectionSettings.isCleanSession(), connectionSettings.getKeepAliveSeconds(),
+                connectionSettings.getWillMessage());
+
+    }
+
+    private Connect(MQTTVersion MQTTVersion, String clientID, String protocolName, int protocolLevel,
                    String username, String password, boolean cleanSession, int keepAliveSeconds, Message willMessage) {
         super(Type.CONNECT, false, Qos.QOS_0, false);
         mMQTTVersion = MQTTVersion;
@@ -109,9 +114,9 @@ public class Connect extends MQTTPacket {
         // length LSB
         bytes.add((mMQTTVersion == MQTTVersion.MQTT_31) ? (byte) 6 : 4);
         // protocol name
-        AppendBytes(bytes, (mMQTTVersion == MQTTVersion.MQTT_31) ? "MQIsdp".getBytes(CHARSET) : "MQTT".getBytes(CHARSET));
+        AppendBytes(bytes, getProtocolName().getBytes(CHARSET));
         // protocol version
-        bytes.add((mMQTTVersion == MQTTVersion.MQTT_31) ? (byte) 3 : 4);
+        bytes.add((byte) getProtocolLevel());
 
         // connection flags
         int indexConnectionFlags = bytes.size();

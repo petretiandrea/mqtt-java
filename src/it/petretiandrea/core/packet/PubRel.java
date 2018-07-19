@@ -1,6 +1,6 @@
 package it.petretiandrea.core.packet;
 
-import it.petretiandrea.common.Qos;
+import it.petretiandrea.core.Qos;
 
 import java.io.UnsupportedEncodingException;
 
