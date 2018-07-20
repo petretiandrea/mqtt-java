@@ -2,6 +2,7 @@ package it.petretiandrea.core.packet.base;
 
 import it.petretiandrea.core.Qos;
 import it.petretiandrea.core.packet.*;
+import it.petretiandrea.core.exception.MQTTParseException;
 
 import java.io.UnsupportedEncodingException;
 import java.util.EnumSet;
@@ -72,7 +73,7 @@ public abstract class MQTTPacket {
 
     private static Type getType(byte[] packet) { return Type.fromInteger((packet[0] & 0xF0) >> 4); }
 
-    public static MQTTPacket parse(byte[] packet) throws Exception {
+    public static MQTTPacket parse(byte[] packet) throws MQTTParseException, UnsupportedEncodingException {
         switch (getType(packet)) {
             case CONNECT:
                 return new Connect(packet);
@@ -92,8 +93,18 @@ public abstract class MQTTPacket {
                 return new Subscribe(packet);
             case SUBACK:
                 return new SubAck(packet);
+            case PINGRESP:
+                return new PingResp(packet);
+            case PINGREQ:
+                return new PingReq(packet);
+            case DISCONNECT:
+                return new Disconnect(packet);
+            case UNSUBACK:
+                return new UnsubAck(packet);
+            case UNSUBSCRIBE:
+                return new Unsubscribe(packet);
             default:
-                throw new Exception("Invalid MQTT Packet type!");
+                throw new MQTTParseException("Invalid MQTT Packet type!");
         }
     }
 

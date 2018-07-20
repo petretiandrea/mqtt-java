@@ -3,6 +3,7 @@ package it.petretiandrea.core.packet;
 import it.petretiandrea.core.Qos;
 import it.petretiandrea.core.Utils;
 import it.petretiandrea.core.packet.base.MQTTPacket;
+import it.petretiandrea.core.exception.MQTTParseException;
 
 import static it.petretiandrea.core.Utils.GenerateFixedHeader;
 import static it.petretiandrea.core.Utils.Join;
@@ -18,14 +19,14 @@ public class SubAck extends MQTTPacket {
         mGrantedQos = grantedQos;
     }
 
-    public SubAck(byte[] packet) throws Exception {
+    public SubAck(byte[] packet) throws MQTTParseException {
         super(packet);
         int offset = (Utils.getRemainingLength(packet) > 127) ? 3 : 2;
         mMessageID = Utils.getIntFromMSBLSB(packet[offset++], packet[offset++]);
         int grantedQos = (packet[offset] & 0xFF);
         if(grantedQos != 0x80)
             mGrantedQos = Qos.fromInteger(grantedQos);
-        else throw new Exception("Granted Qos Failure");
+        else throw new MQTTParseException("Granted Qos Failure");
     }
 
     @Override

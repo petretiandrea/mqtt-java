@@ -2,6 +2,7 @@ package it.petretiandrea.core.packet;
 
 import it.petretiandrea.core.*;
 import it.petretiandrea.core.packet.base.MQTTPacket;
+import it.petretiandrea.core.exception.MQTTParseException;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -51,7 +52,7 @@ public class Connect extends MQTTPacket {
     }
 
     // constructor from packet of byte to object.
-    public Connect(byte[] packet) throws Exception {
+    public Connect(byte[] packet) throws UnsupportedEncodingException, MQTTParseException {
         super(packet);
         int offset = (Utils.getRemainingLength(packet) > 127) ? 3 : 2;
 

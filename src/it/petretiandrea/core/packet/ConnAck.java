@@ -18,8 +18,8 @@ public class ConnAck extends MQTTPacket {
 
     public ConnAck(byte[] packet) {
         super(packet);
-        mSessionPresent = getSessionPresent(packet);
-        mConnectionStatus = getReturnCode(packet);
+        mSessionPresent = (packet[1] & 0x01) == 1;;
+        mConnectionStatus = ConnectionStatus.fromInteger(packet[2] & 0xFF);
     }
 
     @Override
@@ -35,14 +35,12 @@ public class ConnAck extends MQTTPacket {
         );
     }
 
-    private boolean getSessionPresent(byte[] packet) {
-        // second byte, first bit.
-        return (packet[1] & 0x01) == 1;
+    public boolean isSessionPresent() {
+        return mSessionPresent;
     }
 
-    private ConnectionStatus getReturnCode(byte[] packet) {
-        // third byte
-        return ConnectionStatus.fromInteger(packet[2] & 0xFF);
+    public ConnectionStatus getConnectionStatus() {
+        return mConnectionStatus;
     }
 
     @Override

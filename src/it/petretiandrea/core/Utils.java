@@ -1,6 +1,7 @@
 package it.petretiandrea.core;
 
 import it.petretiandrea.core.packet.base.MQTTPacket;
+import it.petretiandrea.core.exception.MQTTParseException;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
@@ -10,7 +11,7 @@ public class Utils {
 
     public static final String CHARSET = "UTF-8";
 
-    public static int getRemainingLength(byte[] packet) throws Exception {
+    public static int getRemainingLength(byte[] packet) throws MQTTParseException {
         // index start from 2nd byte, beacouse the 1st if for mqtt flags
         int index = 1;
         int multiplier = 1;
@@ -19,7 +20,7 @@ public class Utils {
             value += (packet[index] & 127) * multiplier;
             multiplier *= 128;
             if(multiplier > 128*128*128)
-                throw new Exception("Malformed Remaining Length");
+                throw new MQTTParseException("Malformed Remaining Length");
         } while ((packet[++index] & 128) != 0);
         return value;
     }

@@ -1,12 +1,24 @@
 package it.petretiandrea.core;
 
 public class ConnectionSettingsBuilder {
+    private String mHostname;
+    private int mPort;
     private String mClientId;
     private String mUsername;
     private String mPassword;
     private boolean mCleanSession;
     private Message mWillMessage;
     private int mKeepAliveSeconds;
+
+    public ConnectionSettingsBuilder setHostname(String hostname) {
+        mHostname = hostname;
+        return this;
+    }
+
+    public ConnectionSettingsBuilder setPort(int port) {
+        mPort = port;
+        return this;
+    }
 
     public ConnectionSettingsBuilder setClientId(String clientId) {
         mClientId = clientId;
@@ -39,6 +51,6 @@ public class ConnectionSettingsBuilder {
     }
 
     public ConnectionSettings build() {
-        return new ConnectionSettings(mClientId, mUsername, mPassword, mCleanSession, mWillMessage, mKeepAliveSeconds);
+        return new ConnectionSettings(mHostname, mPort, mClientId, mUsername, mPassword, mCleanSession, mWillMessage, mKeepAliveSeconds);
     }
 }

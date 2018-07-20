@@ -3,6 +3,7 @@ package it.petretiandrea.core.packet;
 import it.petretiandrea.core.Qos;
 import it.petretiandrea.core.Utils;
 import it.petretiandrea.core.packet.base.MQTTPacket;
+import it.petretiandrea.core.exception.MQTTParseException;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -26,7 +27,7 @@ public class Unsubscribe extends MQTTPacket {
         mTopic = topic;
     }
 
-    public Unsubscribe(byte[] packet) throws Exception {
+    public Unsubscribe(byte[] packet) throws MQTTParseException, UnsupportedEncodingException {
         super(packet);
 
         int offset = (Utils.getRemainingLength(packet) > 127) ? 3 : 2;

@@ -1,5 +1,6 @@
 package it.petretiandrea;
 
+import it.petretiandrea.client.MQTTClient;
 import it.petretiandrea.core.*;
 import it.petretiandrea.core.packet.ConnAck;
 import it.petretiandrea.core.packet.Connect;
@@ -20,12 +21,32 @@ public class Main {
 	    // write your code here
 
         ConnectionSettings settings = new ConnectionSettingsBuilder()
+                .setHostname("192.168.1.105")
+                .setPort(1883)
                 .setClientId("Bellooo")
-                .setKeepAliveSeconds(10000)
+                .setKeepAliveSeconds(5)
                 .setCleanSession(true)
                 .setWillMessage(new Message("topicWill", "ciaoo", Qos.QOS_2, true))
                 .build();
 
+
+        MQTTClient client = new MQTTClient(settings);
+        try {
+            System.out.println(client.connect());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        System.in.read();
+
+        System.out.println("Publish");
+        client.publish(new Message("provatopic", "caioo", Qos.QOS_0, false));
+
+        System.in.read();
+
+        System.out.println("Disconnetion: " + client.disconnet());
+
+        /*
 
         ServerSocket socketServer = new ServerSocket(1883);
 
@@ -61,7 +82,7 @@ public class Main {
         System.out.println("Writed...");
 
         Thread.sleep(3000);
-        socket.getOutputStream().write(new Subscribe("provatopic", Qos.QOS_1).toByte());
+        socket.getOutputStream().write(new Subscribe("provatopic", Qos.QOS_1).toByte());*/
         System.in.read();
     }
 }

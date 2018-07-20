@@ -3,6 +3,7 @@ package it.petretiandrea.core.packet;
 import it.petretiandrea.core.Qos;
 import it.petretiandrea.core.Utils;
 import it.petretiandrea.core.packet.base.MQTTPacket;
+import it.petretiandrea.core.exception.MQTTParseException;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -28,7 +29,7 @@ public class Subscribe extends MQTTPacket {
         mQosSub = qosSub;
     }
 
-    public Subscribe(byte[] packet) throws Exception {
+    public Subscribe(byte[] packet) throws MQTTParseException, UnsupportedEncodingException {
         super(packet);
         int offset = (Utils.getRemainingLength(packet) > 127) ? 3 : 2;
         mMessageID = Utils.getIntFromMSBLSB(packet[offset++], packet[offset++]);

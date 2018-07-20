@@ -4,6 +4,7 @@ import it.petretiandrea.core.Message;
 import it.petretiandrea.core.Qos;
 import it.petretiandrea.core.Utils;
 import it.petretiandrea.core.packet.base.MQTTPacket;
+import it.petretiandrea.core.exception.MQTTParseException;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -26,7 +27,7 @@ public class Publish extends MQTTPacket {
         mMessageID = message.getMessageID();
     }
 
-    public Publish(byte[] packet) throws Exception {
+    public Publish(byte[] packet) throws MQTTParseException, UnsupportedEncodingException {
         super(packet);
         // offset iniziale in base alla lunghezza, ovvero se la lunghezza rimananente è maggiore
         int remainingLength = Utils.getRemainingLength(packet);
