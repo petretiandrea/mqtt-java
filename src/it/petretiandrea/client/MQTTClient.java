@@ -11,11 +11,10 @@ import it.petretiandrea.core.packet.base.MQTTPacket;
 import it.petretiandrea.core.exception.MQTTParseException;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Predicate;
 
 public class MQTTClient {
 
@@ -26,6 +25,7 @@ public class MQTTClient {
     private boolean mConnected;
 
     private QueueMQTT mIncoming;
+    private QueueMQTT mSendedWaitingPacket;
     private ConnectionSettings mConnectionSettings;
 
     private Thread mReadThread;
@@ -37,10 +37,12 @@ public class MQTTClient {
 
     public MQTTClient(ConnectionSettings connectionSettings) {
         mIncoming = new QueueMQTT();
+        mSendedWaitingPacket = new QueueMQTT();
         mConnected = false;
         mConnectionSettings = connectionSettings;
         mReadThread = new Thread(this::readTaskThread);
         mLastPingRequest = mLastPingResponse = System.currentTimeMillis();
+
 
         // timeout for send a request ping is the real keep alive - 1/4 of real keep alive.
         mPingRequestTimeout = (mConnectionSettings.getKeepAliveSeconds() - (mConnectionSettings.getKeepAliveSeconds() / 4)) * 1000;
@@ -89,18 +91,38 @@ public class MQTTClient {
         return !mConnected;
     }
 
+    /**
+     * Publish a message.
+     * @param message The message to be published.
+     */
     public void publish(Message message){
-        try {
-            if (mConnected) {
-                if(message.getQos().ordinal() > Qos.QOS_0.ordinal()) {
+        if (mConnected) {
+            Publish publish = new Publish(message);
+            try {
+                if (message.getQos().ordinal() > Qos.QOS_0.ordinal()) {
                     // need to add to queue for wait the puback, or pubrel, pubrec, ecc..
+                    mSendedWaitingPacket.add(publish);
                 }
-                mTransport.write(new Publish(message).toByte());
+                mTransport.write(publish.toByte());
+            } catch (IOException e) {
+                e.printStackTrace();
+                mSendedWaitingPacket.remove(publish);
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
+
+    public void subscribe(String topic, Qos qos) {
+        if(mConnected) {
+            try {
+                Subscribe subscribe = new Subscribe(topic, qos);
+                mSendedWaitingPacket.add(subscribe);
+                mTransport.write(subscribe.toByte());
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+
 
     // same of connect()
     private boolean connectMQTT() throws IOException, MQTTException, MQTTParseException {
@@ -143,9 +165,9 @@ public class MQTTClient {
                 } catch (SocketTimeoutException | MQTTParseException ex) {
                     if(ex instanceof  MQTTParseException)
                         ex.printStackTrace();
+                    // Keep alive algorithm
+                    checkKeepAlive();
                 }
-                // Keep alive algorithm
-                checkKeepAlive();
             }
         } catch (IOException | MQTTProtocolException ex) {
             ex.printStackTrace();
@@ -179,6 +201,75 @@ public class MQTTClient {
      */
     private void handleMQTTPacket(MQTTPacket packet) throws IOException {
         switch (packet.getCommand()) {
+            case SUBACK: {
+                SubAck subAck = (SubAck) packet;
+                Subscribe subscribe = (Subscribe) mSendedWaitingPacket.stream().filter(packet13 -> {
+                    if(packet13 instanceof Subscribe)
+                        return ((Subscribe) packet13).getMessageID() == subAck.getMessageID();
+                    return false;
+                }).findFirst().orElse(null);
+                if(subscribe != null) {
+                    mSendedWaitingPacket.remove(subscribe);
+                    // notify with interface the granted qos from server, with topic.
+                    System.out.println("Subscribe to: " + subscribe.getTopic() + " granted: " + subAck.getGrantedQos());
+                }
+                break;
+            }
+            case PUBLISH: { // receive a message from broker
+                Publish publish = (Publish) packet;
+                if(publish.getQos() == Qos.QOS_0) {
+                    // call interface for received message
+                    System.out.println("Received message: " + publish.getMessage());
+                }
+                break;
+            }
+            case PUBACK: { // for published message with QOS_1;
+                PubAck pubAck = (PubAck) packet;
+                // find publish message with same messageid.
+                Publish publish = (Publish) mSendedWaitingPacket.stream().filter(packet1 -> {
+                    if(packet1 instanceof Publish)
+                        return ((Publish) packet1).getMessage().getMessageID() == pubAck.getMessageID();
+                    return false;
+                }).findFirst().orElse(null);
+                if(publish != null) {
+                    mSendedWaitingPacket.remove(publish);
+                    // call interface for signal a QOS_1 publish message
+                    System.out.println("Message " + publish.getMessage().getMessageID() + " is published with QOS_1");
+                }
+                break;
+            }
+            case PUBREC: { // 1st step for publish a QOS_2 message
+                PubRec pubRec = (PubRec) packet;
+                Publish publish = (Publish) mSendedWaitingPacket.stream().filter(packet1 -> {
+                    if(packet1 instanceof Publish)
+                        return ((Publish) packet1).getMessage().getMessageID() == pubRec.getMessageID();
+                    return false;
+                }).findFirst().orElse(null);
+                if(publish != null) {
+                    // found remove it
+                    mSendedWaitingPacket.remove(publish);
+                    // add pub rec to incoming message
+                    mIncoming.add(pubRec);
+                    // send a pub rel
+                    mTransport.write(new PubRel(pubRec.getMessageID()).toByte());
+                }
+                break;
+            }
+            case PUBCOMP: { // 2st step for publish a QOS_2 message
+                PubComp comp = (PubComp) packet;
+                // find a stored pubRec
+                PubRec pubRec = (PubRec) mIncoming.stream().filter(packet12 -> {
+                    if(packet12 instanceof PubRec)
+                        return ((PubRec) packet12).getMessageID() == comp.getMessageID();
+                    return false;
+                }).findFirst().orElse(null);
+                if(pubRec != null) {
+                    // found remove it!
+                    mIncoming.remove(pubRec);
+                    // call interface for signal a QOS_2 publish message
+                    System.out.println("Message " + comp.getMessageID() + " is published with QOS_2");
+                }
+            }
             case PINGREQ: // server request for a ping
                 System.out.println("Received PING REQUEST");
                 mTransport.write(new PingResp().toByte()); // send a ping response to server.

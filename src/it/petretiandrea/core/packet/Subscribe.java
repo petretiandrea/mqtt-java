@@ -19,12 +19,12 @@ public class Subscribe extends MQTTPacket {
     private Qos mQosSub;
 
     public Subscribe(String topic, Qos qosSub) {
-        this(new Random().nextInt(), topic, qosSub);
+        this(new Random().nextInt(65535), topic, qosSub);
     }
 
     public Subscribe(int messageID, String topic, Qos qosSub) {
         super(MQTTPacket.Type.SUBSCRIBE, false, Qos.QOS_1, false);
-        mMessageID = messageID;
+        mMessageID = messageID > 65535 ? new Random().nextInt(65535) : messageID;
         mTopic = topic;
         mQosSub = qosSub;
     }

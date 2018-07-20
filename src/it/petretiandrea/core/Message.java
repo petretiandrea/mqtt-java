@@ -18,7 +18,7 @@ public class Message {
         mQos = qos;
         // for qos 1 and 2 the message id need to be set to random int
         if(qos.ordinal() > Qos.QOS_0.ordinal())
-            mMessageID = new Random().nextInt();
+            mMessageID = new Random().nextInt(65535);
         else
             mMessageID = 0; // for qos0 the message id is 0.
     }
@@ -29,7 +29,7 @@ public class Message {
         mMessage = message;
         mQos = qos;
         if(qos.ordinal() > Qos.QOS_0.ordinal())
-            mMessageID = messageID;
+            mMessageID = (messageID > 65535) ? new Random().nextInt(65535 ) : messageID;
         else
             mMessageID = 0; // for qos0 the message id is 0.
     }

@@ -24,7 +24,7 @@ public class Main {
                 .setHostname("192.168.1.105")
                 .setPort(1883)
                 .setClientId("Bellooo")
-                .setKeepAliveSeconds(5)
+                .setKeepAliveSeconds(10)
                 .setCleanSession(true)
                 .setWillMessage(new Message("topicWill", "ciaoo", Qos.QOS_2, true))
                 .build();
@@ -38,9 +38,12 @@ public class Main {
         }
 
         System.in.read();
-
         System.out.println("Publish");
-        client.publish(new Message("provatopic", "caioo", Qos.QOS_0, false));
+        client.publish(new Message("provatopic", "caioo", Qos.QOS_2, false));
+
+        System.in.read();
+        System.out.println("Subscribe");
+        client.subscribe("provatopic", Qos.QOS_0);
 
         System.in.read();
 
