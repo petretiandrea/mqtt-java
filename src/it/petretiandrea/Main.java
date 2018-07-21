@@ -24,7 +24,7 @@ public class Main {
                 .setHostname("192.168.1.105")
                 .setPort(1883)
                 .setClientId("Bellooo")
-                .setKeepAliveSeconds(10)
+                .setKeepAliveSeconds(5)
                 .setCleanSession(true)
                 .setWillMessage(new Message("topicWill", "ciaoo", Qos.QOS_2, true))
                 .build();

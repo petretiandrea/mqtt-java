@@ -159,6 +159,8 @@ public class MQTTClient {
                 try {
                     MQTTPacket packet = readPacket();
                     if(packet != null) {
+                        // a packet is arrived, reset keep alive
+                        resetKeepAliveTimeout();
                         handleMQTTPacket(packet);
                         System.out.println(packet);
                     }
@@ -176,6 +178,10 @@ public class MQTTClient {
         }
     }
 
+    private void resetKeepAliveTimeout() {
+        mLastPingRequest = System.currentTimeMillis();
+    }
+
     /**
      * Method for check the KeepAlive status.
      * @throws IOException If there is an error during Ping Request
@@ -186,7 +192,7 @@ public class MQTTClient {
         if(now - mLastPingRequest >= mPingRequestTimeout) {
             // timeout reached need to send ping req.
             mTransport.write(new PingReq().toByte());
-            mLastPingRequest = now;
+            resetKeepAliveTimeout();
             System.out.println("Sended PING REQUEST");
         } else if(now - mLastPingResponse > mPingResponseTimeout) {
             // here no response from server from my ping request, throw and exception for no ping response received

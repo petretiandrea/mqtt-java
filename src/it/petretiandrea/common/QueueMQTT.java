@@ -6,4 +6,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class QueueMQTT extends ConcurrentLinkedQueue<MQTTPacket> {
 
+
+
+
 }
