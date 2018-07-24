@@ -1,13 +1,21 @@
 package it.petretiandrea.core;
 
+import it.petretiandrea.core.exception.MQTTParseException;
+
 import java.util.EnumSet;
+import java.util.function.Supplier;
 
 public enum Qos {
     QOS_0,
     QOS_1,
     QOS_2;
 
-    public static Qos fromInteger(int value) {
-        return EnumSet.allOf(Qos.class).stream().filter(type -> type.ordinal() == value).findFirst().orElse(null);
+    public static Qos fromInteger(int value) throws MQTTParseException {
+        return EnumSet
+                .allOf(Qos.class)
+                .stream()
+                .filter(type -> type.ordinal() == value)
+                .findFirst()
+                .orElseThrow(() -> new MQTTParseException("Invalid QOS", MQTTParseException.Reason.INVALID_QOS));
     }
 }

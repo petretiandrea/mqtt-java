@@ -11,6 +11,8 @@ public class Utils {
 
     public static final String CHARSET = "UTF-8";
 
+    public static MQTTPacket.Type getType(byte header) throws MQTTParseException { return MQTTPacket.Type.fromInteger((header & 0xF0) >> 4); }
+
     public static int getRemainingLength(byte[] packet) throws MQTTParseException {
         // index start from 2nd byte, beacouse the 1st if for mqtt flags
         int index = 1;
@@ -20,7 +22,7 @@ public class Utils {
             value += (packet[index] & 127) * multiplier;
             multiplier *= 128;
             if(multiplier > 128*128*128)
-                throw new MQTTParseException("Malformed Remaining Length");
+                throw new MQTTParseException("Malformed Remaining Length", MQTTParseException.Reason.INVALID_MQTT_PACKET);
         } while ((packet[++index] & 128) != 0);
         return value;
     }

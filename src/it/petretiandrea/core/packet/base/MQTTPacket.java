@@ -3,9 +3,12 @@ package it.petretiandrea.core.packet.base;
 import it.petretiandrea.core.Qos;
 import it.petretiandrea.core.packet.*;
 import it.petretiandrea.core.exception.MQTTParseException;
+import it.petretiandrea.core.Utils;
 
+import javax.rmi.CORBA.Util;
 import java.io.UnsupportedEncodingException;
 import java.util.EnumSet;
+import java.util.function.Supplier;
 
 public abstract class MQTTPacket {
 
@@ -29,8 +32,11 @@ public abstract class MQTTPacket {
         public int Value() { return mVal; }
         Type(int val) {mVal = val;}
 
-        public static Type fromInteger(int value) {
-            return EnumSet.allOf(Type.class).stream().filter(type -> type.Value() == value).findFirst().orElse(null);
+        public static Type fromInteger(int value) throws MQTTParseException {
+            return EnumSet.allOf(Type.class).stream()
+                    .filter(type -> type.Value() == value)
+                    .findFirst()
+                    .orElseThrow(() -> new MQTTParseException("Type of MQTT Packet not recognized!", MQTTParseException.Reason.INVALID_MQTT_PACKET));
         }
     }
 
@@ -46,11 +52,11 @@ public abstract class MQTTPacket {
         mDup = dup;
     }
 
-    public MQTTPacket(byte[] packet) {
-        mCommand = Type.fromInteger((packet[0] & 0xF0) >> 4);
-        mQos = Qos.fromInteger((packet[0] & 0x06) >> 1);
-        mDup = (packet[0] & 0x08 >> 3) == 1;
-        mRetain = (packet[0] & 0x01) == 1;
+    public MQTTPacket(byte fixedHeader) throws MQTTParseException {
+        mCommand = Type.fromInteger((fixedHeader & 0xF0) >> 4);
+        mQos = Qos.fromInteger((fixedHeader & 0x06) >> 1);
+        mDup = (fixedHeader & 0x08 >> 3) == 1;
+        mRetain = (fixedHeader & 0x01) == 1;
     }
 
     public abstract byte[] toByte() throws UnsupportedEncodingException;
@@ -71,40 +77,38 @@ public abstract class MQTTPacket {
         return mDup;
     }
 
-    private static Type getType(byte[] packet) { return Type.fromInteger((packet[0] & 0xF0) >> 4); }
-
-    public static MQTTPacket parse(byte[] packet) throws MQTTParseException, UnsupportedEncodingException {
-        switch (getType(packet)) {
+    public static MQTTPacket parseBody(byte fixedHeader, byte[] body) throws MQTTParseException, UnsupportedEncodingException {
+        switch (Utils.getType(fixedHeader)) {
             case CONNECT:
-                return new Connect(packet);
+                return new Connect(fixedHeader, body);
             case CONNACK:
-                return new ConnAck(packet);
+                return new ConnAck(fixedHeader, body);
             case PUBACK:
-                return new PubAck(packet);
+                return new PubAck(fixedHeader, body);
             case PUBREL:
-                return new PubRel(packet);
+                return new PubRel(fixedHeader, body);
             case PUBREC:
-                return new PubRec(packet);
+                return new PubRec(fixedHeader, body);
             case PUBCOMP:
-                return new PubComp(packet);
+                return new PubComp(fixedHeader, body);
             case PUBLISH:
-                return new Publish(packet);
+                return new Publish(fixedHeader, body);
             case SUBSCRIBE:
-                return new Subscribe(packet);
+                return new Subscribe(fixedHeader, body);
             case SUBACK:
-                return new SubAck(packet);
+                return new SubAck(fixedHeader, body);
             case PINGRESP:
-                return new PingResp(packet);
+                return new PingResp(fixedHeader, body);
             case PINGREQ:
-                return new PingReq(packet);
+                return new PingReq(fixedHeader, body);
             case DISCONNECT:
-                return new Disconnect(packet);
+                return new Disconnect(fixedHeader, body);
             case UNSUBACK:
-                return new UnsubAck(packet);
+                return new UnsubAck(fixedHeader, body);
             case UNSUBSCRIBE:
-                return new Unsubscribe(packet);
+                return new Unsubscribe(fixedHeader, body);
             default:
-                throw new MQTTParseException("Invalid MQTT Packet type!");
+                throw new MQTTParseException("Invalid MQTT Packet type!", MQTTParseException.Reason.INVALID_MQTT_PACKET);
         }
     }
 

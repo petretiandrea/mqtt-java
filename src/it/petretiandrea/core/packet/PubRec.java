@@ -1,6 +1,7 @@
 package it.petretiandrea.core.packet;
 
 import it.petretiandrea.core.Qos;
+import it.petretiandrea.core.exception.MQTTParseException;
 
 import java.io.UnsupportedEncodingException;
 
@@ -13,8 +14,8 @@ public class PubRec extends ACK {
         super(Type.PUBREC, false, Qos.QOS_0, false, messageID);
     }
 
-    public PubRec(byte[] packet) {
-        super(packet);
+    public PubRec(byte fixedHedaer, byte[] body) throws MQTTParseException {
+        super(fixedHedaer, body);
     }
 
     @Override

@@ -27,14 +27,14 @@ public class Unsubscribe extends MQTTPacket {
         mTopic = topic;
     }
 
-    public Unsubscribe(byte[] packet) throws MQTTParseException, UnsupportedEncodingException {
-        super(packet);
+    public Unsubscribe(byte fixedHeader, byte[] body) throws MQTTParseException, UnsupportedEncodingException {
+        super(fixedHeader);
 
-        int offset = (Utils.getRemainingLength(packet) > 127) ? 3 : 2;
-        mMessageID = Utils.getIntFromMSBLSB(packet[offset++], packet[offset++]);
+        int offset = 0;
+        mMessageID = Utils.getIntFromMSBLSB(body[offset++], body[offset++]);
 
-        int topicLength = Utils.getIntFromMSBLSB(packet[offset++], packet[offset++]);
-        mTopic = new String(packet, offset, topicLength, "UTF-8");
+        int topicLength = Utils.getIntFromMSBLSB(body[offset++], body[offset++]);
+        mTopic = new String(body, offset, topicLength, "UTF-8");
     }
 
     public int getMessageID() {

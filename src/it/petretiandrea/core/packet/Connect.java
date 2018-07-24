@@ -3,15 +3,19 @@ package it.petretiandrea.core.packet;
 import it.petretiandrea.core.*;
 import it.petretiandrea.core.packet.base.MQTTPacket;
 import it.petretiandrea.core.exception.MQTTParseException;
+import it.petretiandrea.core.Utils;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
 import static it.petretiandrea.core.Utils.*;
+import static it.petretiandrea.core.exception.MQTTParseException.Reason;
 
 public class Connect extends MQTTPacket {
 
+    // 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
+    private static final String PATTERN_CLIENT_ID = "[a-zA-Z0-9]";
     private static final byte FLAG_CLEAN_SESSION = 2;
     private static final byte FLAG_WILL = (1 << 2);
     private static final byte FLAG_WILL_RETAIN = (1 << 5);
@@ -52,9 +56,9 @@ public class Connect extends MQTTPacket {
     }
 
     // constructor from packet of byte to object.
-    public Connect(byte[] packet) throws UnsupportedEncodingException, MQTTParseException {
-        super(packet);
-        int offset = (Utils.getRemainingLength(packet) > 127) ? 3 : 2;
+    public Connect(byte fixedHeader, byte[] packet) throws UnsupportedEncodingException, MQTTParseException {
+        super(fixedHeader);
+        int offset = 0;
 
         int protocolNameLength = Utils.getIntFromMSBLSB(packet[offset++], packet[offset++]);
         mProtocolName = new String(packet, offset, protocolNameLength, "UTF-8");
@@ -75,8 +79,10 @@ public class Connect extends MQTTPacket {
 
         // parse Client ID.
         int clientIDLength = Utils.getIntFromMSBLSB(packet[++offset], packet[++offset]);
-        String clientID = new String(packet, ++offset, clientIDLength, "UTF-8");
+        mClientID = new String(packet, ++offset, clientIDLength, "UTF-8");
         offset += clientIDLength;
+        if(clientIDLength > 23 || clientIDLength < 0 || mClientID.trim().isEmpty() /*|| !mClientID.matches(PATTERN_CLIENT_ID) */)
+            throw new MQTTParseException("Invalid Client ID", Reason.INVALID_CLIENT_ID);
 
         // parse of Will Message
         if(willFlag) {
@@ -84,18 +90,24 @@ public class Connect extends MQTTPacket {
             int strLength = Utils.getIntFromMSBLSB(packet[offset++], packet[offset++]);
             String willTopic = new String(packet, offset, strLength, "UTF-8");
             offset += strLength;
+            if(strLength <= 0 || willTopic.trim().isEmpty()) throw new MQTTParseException("Invalid Will Topic", Reason.INVALID_WILL);
             // parse will message content
             strLength = Utils.getIntFromMSBLSB(packet[offset++], packet[offset++]);
             String willMessage = new String(packet, offset, strLength, "UTF-8");
             offset += strLength;
+            if(strLength <= 0 || willMessage.trim().isEmpty()) throw new MQTTParseException("Invalid Will Topic", Reason.INVALID_WILL);
             mWillMessage = new Message(willTopic, willMessage, Qos.fromInteger(willQos), willRetainFlag);
-        } else mWillMessage = null;
+        } else {
+            mWillMessage = null;
+            if(Qos.fromInteger(willQos) != Qos.QOS_0) throw new MQTTParseException("Invalid Will QOS", Reason.INVALID_QOS);
+        }
 
         if(usernameFlag) {
             int usernameLength = Utils.getIntFromMSBLSB(packet[offset++], packet[offset]++);
             String username = new String(packet, offset, usernameLength, "UTF-8");
             offset += usernameLength;
             mUsername = username;
+            if(usernameLength <= 0 || mUsername.trim().isEmpty()) throw new MQTTParseException("No username", Reason.NO_USERNAME);
         } else mUsername = null;
 
         if(passwordFlag) {
@@ -103,7 +115,15 @@ public class Connect extends MQTTPacket {
             String password = new String(packet, offset, passwordLength, "UTF-8");
             offset += passwordLength;
             mPassword = password;
+            if(passwordLength <= 0 || mPassword.trim().isEmpty()) throw new MQTTParseException("No password", Reason.NO_PASSWORD);
         } else mPassword = null;
+
+        if(mProtocolName.equals("MQTT") && mProtocolLevel == 4)
+            mMQTTVersion = MQTTVersion.MQTT_311;
+        else if(mProtocolName.equals("MQIsdp") && mProtocolLevel == 3)
+            mMQTTVersion = MQTTVersion.MQTT_31;
+        else
+            throw new MQTTParseException("Invalid MQTT Version!", Reason.INVALID_MQTT_NAME_LEVEL);
     }
 
     @Override

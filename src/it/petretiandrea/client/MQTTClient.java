@@ -16,6 +16,8 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.function.Predicate;
 
+// TODO: Add a read method inside transport layer, for read with specific timeout.
+// TODO: And use this method for wait a ConnAck, with timeout = connectionSettings.getKeepAliveSeconds() * 1000;
 public class MQTTClient {
 
     private static double SOCKET_IO_TIMEOUT = 0.5;
@@ -24,8 +26,8 @@ public class MQTTClient {
     private Socket mSocket;
     private boolean mConnected;
 
-    private QueueMQTT mIncoming;
-    private QueueMQTT mSendedWaitingPacket;
+    private QueueMQTT<MQTTPacket> mIncoming;
+    private QueueMQTT<MQTTPacket> mSendedWaitingPacket;
     private ConnectionSettings mConnectionSettings;
 
     private Thread mReadThread;
@@ -36,8 +38,8 @@ public class MQTTClient {
     private long mPingResponseTimeout;
 
     public MQTTClient(ConnectionSettings connectionSettings) {
-        mIncoming = new QueueMQTT();
-        mSendedWaitingPacket = new QueueMQTT();
+        mIncoming = new QueueMQTT<>();
+        mSendedWaitingPacket = new QueueMQTT<>();
         mConnected = false;
         mConnectionSettings = connectionSettings;
         mReadThread = new Thread(this::readTaskThread);
@@ -54,7 +56,7 @@ public class MQTTClient {
      * Get the connected status
      * @return True if client is connect, false otherwise.
      */
-    public boolean isConnected() {
+    public synchronized boolean isConnected() {
         return mConnected;
     }
 
@@ -77,7 +79,7 @@ public class MQTTClient {
     public synchronized boolean disconnet() {
         if(mConnected && !mSocket.isClosed()) {
             try {
-                mTransport.write(new Disconnect().toByte());
+                mTransport.writePacket(new Disconnect());
                 mSocket.close();
                 mReadThread.interrupt();
                 mConnected = false;
@@ -103,7 +105,7 @@ public class MQTTClient {
                     // need to add to queue for wait the puback, or pubrel, pubrec, ecc..
                     mSendedWaitingPacket.add(publish);
                 }
-                mTransport.write(publish.toByte());
+                mTransport.writePacket(publish);
             } catch (IOException e) {
                 e.printStackTrace();
                 mSendedWaitingPacket.remove(publish);
@@ -116,13 +118,12 @@ public class MQTTClient {
             try {
                 Subscribe subscribe = new Subscribe(topic, qos);
                 mSendedWaitingPacket.add(subscribe);
-                mTransport.write(subscribe.toByte());
+                mTransport.writePacket(subscribe);
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
         }
     }
-
 
     // same of connect()
     private boolean connectMQTT() throws IOException, MQTTException, MQTTParseException {
@@ -138,8 +139,8 @@ public class MQTTClient {
 
             if(mSocket.isConnected()) {
                 MQTTPacket connack = null;
-                mTransport.write(new Connect(MQTTVersion.MQTT_311, mConnectionSettings).toByte());
-                if((connack = readPacket()) != null) {
+                mTransport.writePacket(new Connect(MQTTVersion.MQTT_311, mConnectionSettings));
+                if((connack = mTransport.readPacket()) != null) {
                     if(connack.getCommand() == MQTTPacket.Type.CONNACK) {
                         if (((ConnAck) connack).getConnectionStatus() == ConnectionStatus.ACCEPT) {
                             mReadThread.start();
@@ -157,7 +158,7 @@ public class MQTTClient {
         try {
             while (!Thread.interrupted() && !mSocket.isClosed()) {
                 try {
-                    MQTTPacket packet = readPacket();
+                    MQTTPacket packet = mTransport.readPacket();
                     if(packet != null) {
                         // a packet is arrived, reset keep alive
                         resetKeepAliveTimeout();
@@ -191,7 +192,7 @@ public class MQTTClient {
         long now = System.currentTimeMillis();
         if(now - mLastPingRequest >= mPingRequestTimeout) {
             // timeout reached need to send ping req.
-            mTransport.write(new PingReq().toByte());
+            mTransport.writePacket(new PingReq());
             resetKeepAliveTimeout();
             System.out.println("Sended PING REQUEST");
         } else if(now - mLastPingResponse > mPingResponseTimeout) {
@@ -257,7 +258,7 @@ public class MQTTClient {
                     // add pub rec to incoming message
                     mIncoming.add(pubRec);
                     // send a pub rel
-                    mTransport.write(new PubRel(pubRec.getMessageID()).toByte());
+                    mTransport.writePacket(new PubRel(pubRec.getMessageID()));
                 }
                 break;
             }
@@ -278,7 +279,7 @@ public class MQTTClient {
             }
             case PINGREQ: // server request for a ping
                 System.out.println("Received PING REQUEST");
-                mTransport.write(new PingResp().toByte()); // send a ping response to server.
+                mTransport.writePacket(new PingResp()); // send a ping response to server.
                 break;
             case PINGRESP:
                 System.out.println("Received PING RESPONSE");
@@ -286,19 +287,4 @@ public class MQTTClient {
                 break;
         }
     }
-
-    /**
-     * Read a MQTTPacket from transport object.
-     * @return A valid MQTTPacket, null otherwise.
-     * @throws IOException If there is an error on socket.
-     * @throws MQTTParseException If the packet is not a valid MQTT packet.
-     */
-    private MQTTPacket readPacket() throws IOException, MQTTParseException {
-        byte[] buffer = new byte[1024];
-        if (mTransport.read(buffer) > 0) {
-            return MQTTPacket.parse(buffer);
-        }
-        return null;
-    }
-
 }

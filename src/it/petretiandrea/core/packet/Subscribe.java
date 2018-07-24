@@ -29,16 +29,16 @@ public class Subscribe extends MQTTPacket {
         mQosSub = qosSub;
     }
 
-    public Subscribe(byte[] packet) throws MQTTParseException, UnsupportedEncodingException {
-        super(packet);
-        int offset = (Utils.getRemainingLength(packet) > 127) ? 3 : 2;
-        mMessageID = Utils.getIntFromMSBLSB(packet[offset++], packet[offset++]);
+    public Subscribe(byte fixedHeader, byte[] body) throws MQTTParseException, UnsupportedEncodingException {
+        super(fixedHeader);
+        int offset = 0;
+        mMessageID = Utils.getIntFromMSBLSB(body[offset++], body[offset++]);
 
-        int topicLength = Utils.getIntFromMSBLSB(packet[offset++], packet[offset++]);
-        mTopic = new String(packet, offset, topicLength, "UTF-8");
+        int topicLength = Utils.getIntFromMSBLSB(body[offset++], body[offset++]);
+        mTopic = new String(body, offset, topicLength, "UTF-8");
         offset += topicLength;
 
-        mQosSub = Qos.fromInteger(packet[offset] & 0x03);
+        mQosSub = Qos.fromInteger(body[offset] & 0x03);
     }
 
     @Override

@@ -3,6 +3,7 @@ package it.petretiandrea.core.packet;
 import it.petretiandrea.core.Qos;
 import it.petretiandrea.core.ConnectionStatus;
 import it.petretiandrea.core.Utils;
+import it.petretiandrea.core.exception.MQTTParseException;
 import it.petretiandrea.core.packet.base.MQTTPacket;
 
 public class ConnAck extends MQTTPacket {
@@ -16,10 +17,10 @@ public class ConnAck extends MQTTPacket {
         mConnectionStatus = connectionStatus;
     }
 
-    public ConnAck(byte[] packet) {
-        super(packet);
-        mSessionPresent = (packet[1] & 0x01) == 1;;
-        mConnectionStatus = ConnectionStatus.fromInteger(packet[2] & 0xFF);
+    public ConnAck(byte fixedHeader, byte[] body) throws MQTTParseException {
+        super(fixedHeader);
+        mSessionPresent = (body[1] & 0x01) == 1;;
+        mConnectionStatus = ConnectionStatus.fromInteger(body[2] & 0xFF);
     }
 
     @Override

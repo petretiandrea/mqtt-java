@@ -1,6 +1,7 @@
 package it.petretiandrea.core.packet;
 
 import it.petretiandrea.core.Qos;
+import it.petretiandrea.core.exception.MQTTParseException;
 import it.petretiandrea.core.packet.base.MQTTPacket;
 
 import java.io.UnsupportedEncodingException;
@@ -13,8 +14,8 @@ public class PingResp extends MQTTPacket {
         super(MQTTPacket.Type.PINGRESP, false, Qos.QOS_0, false);
     }
 
-    public PingResp(byte[] packet) {
-        super(packet);
+    public PingResp(byte fixedHeader, byte[] body) throws MQTTParseException {
+        super(fixedHeader);
     }
 
     @Override

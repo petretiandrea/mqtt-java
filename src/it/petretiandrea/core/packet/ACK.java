@@ -2,6 +2,7 @@ package it.petretiandrea.core.packet;
 
 import it.petretiandrea.core.Qos;
 import it.petretiandrea.core.Utils;
+import it.petretiandrea.core.exception.MQTTParseException;
 import it.petretiandrea.core.packet.base.MQTTPacket;
 
 public abstract class ACK extends MQTTPacket {
@@ -13,9 +14,9 @@ public abstract class ACK extends MQTTPacket {
         mMessageID = messageID;
     }
 
-    public ACK(byte[] packet) {
-        super(packet);
-        mMessageID = Utils.getIntFromMSBLSB(packet[2], packet[3]);
+    public ACK(byte fixedHeader, byte[] body) throws MQTTParseException {
+        super(fixedHeader);
+        mMessageID = Utils.getIntFromMSBLSB(body[2], body[3]);
     }
 
     public int getMessageID() {

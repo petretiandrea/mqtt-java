@@ -1,6 +1,7 @@
 package it.petretiandrea.core.packet;
 
 import it.petretiandrea.core.Qos;
+import it.petretiandrea.core.exception.MQTTParseException;
 import it.petretiandrea.core.packet.base.MQTTPacket;
 
 import java.io.UnsupportedEncodingException;
@@ -13,8 +14,8 @@ public class Disconnect extends MQTTPacket {
         super(Type.DISCONNECT, false, Qos.QOS_0, false);
     }
 
-    public Disconnect(byte[] packet) {
-        super(packet);
+    public Disconnect(byte fixedHeader, byte[] body) throws MQTTParseException {
+        super(fixedHeader);
     }
 
     @Override

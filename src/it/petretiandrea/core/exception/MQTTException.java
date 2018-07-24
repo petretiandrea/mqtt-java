@@ -1,6 +1,7 @@
 package it.petretiandrea.core.exception;
 
 public class MQTTException extends Exception {
+
     public MQTTException() {
     }
 

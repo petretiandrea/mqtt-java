@@ -19,14 +19,14 @@ public class SubAck extends MQTTPacket {
         mGrantedQos = grantedQos;
     }
 
-    public SubAck(byte[] packet) throws MQTTParseException {
-        super(packet);
-        int offset = (Utils.getRemainingLength(packet) > 127) ? 3 : 2;
-        mMessageID = Utils.getIntFromMSBLSB(packet[offset++], packet[offset++]);
-        int grantedQos = (packet[offset] & 0xFF);
+    public SubAck(byte fixedHedaer, byte[] body) throws MQTTParseException {
+        super(fixedHedaer);
+        int offset = 0;
+        mMessageID = Utils.getIntFromMSBLSB(body[offset++], body[offset++]);
+        int grantedQos = (body[offset] & 0xFF);
         if(grantedQos != 0x80)
             mGrantedQos = Qos.fromInteger(grantedQos);
-        else throw new MQTTParseException("Granted Qos Failure");
+        else throw new MQTTParseException("Granted Qos Failure", MQTTParseException.Reason.INVALID_QOS);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package it.petretiandrea.core.packet;
 
 import it.petretiandrea.core.Qos;
+import it.petretiandrea.core.exception.MQTTParseException;
 import it.petretiandrea.core.packet.base.MQTTPacket;
 
 import java.io.UnsupportedEncodingException;
@@ -14,8 +15,8 @@ public class UnsubAck extends ACK {
         super(MQTTPacket.Type.UNSUBACK, false, Qos.QOS_0, false, messageID);
     }
 
-    public UnsubAck(byte[] packet) {
-        super(packet);
+    public UnsubAck(byte fixedHeader, byte[] body) throws MQTTParseException {
+        super(fixedHeader, body);
     }
 
     @Override

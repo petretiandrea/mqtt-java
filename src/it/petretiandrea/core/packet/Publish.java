@@ -27,26 +27,25 @@ public class Publish extends MQTTPacket {
         mMessageID = message.getMessageID();
     }
 
-    public Publish(byte[] packet) throws MQTTParseException, UnsupportedEncodingException {
-        super(packet);
+    public Publish(byte fixedHeader, byte[] body) throws MQTTParseException, UnsupportedEncodingException {
+        super(fixedHeader);
         // offset iniziale in base alla lunghezza, ovvero se la lunghezza rimananente è maggiore
-        int remainingLength = Utils.getRemainingLength(packet);
-        int offset = (remainingLength > 127) ? 3 : 2;
+        int offset = 0;
 
-        int topicLen = Utils.getIntFromMSBLSB(packet[offset++], packet[offset++]); // posizione dopo la RemainingLength, inizia MSB e poi LSB.
+        int topicLen = Utils.getIntFromMSBLSB(body[offset++], body[offset++]); // posizione dopo la RemainingLength, inizia MSB e poi LSB.
 
-        mTopic = new String(packet, offset, topicLen, CHARSET); // parse string topic id
+        mTopic = new String(body, offset, topicLen, CHARSET); // parse string topic id
 
         offset += topicLen;
 
         // message ID
         if(getQos().ordinal() > Qos.QOS_0.ordinal()) {
             // qos 1 or qos 2, retrive message id.
-            mMessageID = Utils.getIntFromMSBLSB(packet[offset++], packet[offset++]);
+            mMessageID = Utils.getIntFromMSBLSB(body[offset++], body[offset++]);
         } else mMessageID = 0;
 
         // message content
-        mMessageContent = new String(packet, offset, remainingLength - offset + 2 /*2 Fixed header length*/, CHARSET);
+        mMessageContent = new String(body, offset, body.length - offset, CHARSET);
     }
 
     public Message getMessage() {

@@ -1,6 +1,7 @@
 package it.petretiandrea.core.packet;
 
 import it.petretiandrea.core.Qos;
+import it.petretiandrea.core.exception.MQTTParseException;
 
 import java.io.UnsupportedEncodingException;
 
@@ -13,8 +14,8 @@ public class PubRel extends ACK {
         super(Type.PUBREL, false, Qos.QOS_0, false, messageID);
     }
 
-    public PubRel(byte[] packet) {
-        super(packet);
+    public PubRel(byte fixedHeader, byte[] body) throws MQTTParseException {
+        super(fixedHeader, body);
     }
 
     @Override
