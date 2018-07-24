@@ -19,8 +19,8 @@ public class ConnAck extends MQTTPacket {
 
     public ConnAck(byte fixedHeader, byte[] body) throws MQTTParseException {
         super(fixedHeader);
-        mSessionPresent = (body[1] & 0x01) == 1;;
-        mConnectionStatus = ConnectionStatus.fromInteger(body[2] & 0xFF);
+        mSessionPresent = (body[0] & 0x01) == 1;;
+        mConnectionStatus = ConnectionStatus.fromInteger(body[1] & 0xFF);
     }
 
     @Override

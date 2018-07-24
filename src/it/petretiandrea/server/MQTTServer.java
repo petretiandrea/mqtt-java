@@ -3,9 +3,12 @@ package it.petretiandrea.server;
 import it.petretiandrea.common.Transport;
 import it.petretiandrea.common.TransportTCP;
 import it.petretiandrea.core.ConnectionStatus;
+import it.petretiandrea.core.Message;
+import it.petretiandrea.core.Qos;
 import it.petretiandrea.core.exception.MQTTParseException;
 import it.petretiandrea.core.packet.ConnAck;
 import it.petretiandrea.core.packet.Connect;
+import it.petretiandrea.core.packet.Subscribe;
 import it.petretiandrea.core.packet.base.MQTTPacket;
 import it.petretiandrea.server.security.AccountManager;
 
@@ -15,6 +18,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 public class MQTTServer {
 
@@ -56,6 +62,16 @@ public class MQTTServer {
                     /* Clean session if the flag clean session is true */
                     mSessionManager.cleanSession(clientMonitor.getSession().getClientID());
                 }
+            }
+
+            @Override
+            public void onPublishMessageReceived(Message message) {
+                if(message.getQos() == Qos.QOS_0 || message.getQos() == Qos.QOS_1)
+                    mClientsConnected.forEach((s, clientMonitor) ->
+                            clientMonitor.getSession().getSubscriptions().stream()
+                            .filter(subscribe -> subscribe.getTopic().equals(message.getTopic()) && message.getQos().ordinal() <= subscribe.getQosSub().ordinal())
+                            .findFirst()
+                            .ifPresent((sub) -> clientMonitor.publish(message)));
             }
         };
     }
@@ -168,12 +184,8 @@ public class MQTTServer {
     private void disconnectClient(String clientID) {
         if(mClientsConnected.containsKey(clientID)) {
             // another client with same client id
-            try {
-                // wait for disconnection.
-                mClientsConnected.get(clientID).disconnect().wait(5000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            // wait for disconnection.
+            mClientsConnected.get(clientID).disconnect().join();
         }
     }
 }

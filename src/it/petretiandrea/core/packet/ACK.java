@@ -16,7 +16,7 @@ public abstract class ACK extends MQTTPacket {
 
     public ACK(byte fixedHeader, byte[] body) throws MQTTParseException {
         super(fixedHeader);
-        mMessageID = Utils.getIntFromMSBLSB(body[2], body[3]);
+        mMessageID = Utils.getIntFromMSBLSB(body[0], body[1]);
     }
 
     public int getMessageID() {

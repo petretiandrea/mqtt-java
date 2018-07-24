@@ -1,6 +1,7 @@
 package it.petretiandrea.server;
 
 import it.petretiandrea.common.Transport;
+import it.petretiandrea.core.Message;
 import it.petretiandrea.core.Qos;
 import it.petretiandrea.core.exception.MQTTParseException;
 import it.petretiandrea.core.exception.MQTTProtocolException;
@@ -33,7 +34,7 @@ public class ClientMonitor {
 
     private ClientMonitorServerCallback mServerComm;
 
-    private Thread mThread;
+    private final Thread mThread;
 
     public ClientMonitor(Transport transport, Session session, Connect settings, ClientMonitorServerCallback serverComm) {
         mTransport = transport;
@@ -82,13 +83,11 @@ public class ClientMonitor {
                         handlePacket(packet);
                         System.out.println(mConnectSettings.getClientID() + "\t" +packet);
                     }
-                } catch (SocketTimeoutException | MQTTParseException ex) {
-                    if(ex instanceof  MQTTParseException)
-                        ex.printStackTrace();
+                } catch (SocketTimeoutException ignored) {
                 }
                 checkClientAlive();
             }
-        } catch (IOException | MQTTProtocolException ex) {
+        } catch (IOException | MQTTProtocolException | MQTTParseException ex) {
             System.err.println(mConnectSettings.getClientID() + " " + ex.getMessage());
             ex.printStackTrace();
         }
@@ -122,6 +121,9 @@ public class ClientMonitor {
 
     private void handlePacket(MQTTPacket packet) throws IOException, MQTTProtocolException {
         switch (packet.getCommand()) {
+            case PUBACK: {
+                break;
+            }
             case DISCONNECT:
                 disconnect();
                 break;
@@ -133,16 +135,32 @@ public class ClientMonitor {
                 break;
             case PUBLISH: {
                 Publish pub = (Publish) packet;
-                if(pub.getQos() == Qos.QOS_1) {
-                    // send to other client
-                    // send a puback
-                    mTransport.writePacket(new PubAck(pub.getMessage().getMessageID()));
-                } else if(pub.getQos() == Qos.QOS_2) {
-
+                if(pub.getQos() == Qos.QOS_0 || pub.getQos() == Qos.QOS_1) {
+                    if (pub.getQos() == Qos.QOS_1) mTransport.writePacket(new PubAck(pub.getMessage().getMessageID()));
+                    mServerComm.onPublishMessageReceived(pub.getMessage());
                 }
                 break;
+            }
+            case SUBSCRIBE: {
+                Subscribe sub = (Subscribe) packet;
+                mTransport.writePacket(new SubAck(sub.getMessageID(), sub.getQosSub()));
+                getSession().getSubscriptions().add(sub);
+                System.out.println(getSession().getClientID() + "\tsubscribed to: " + sub.getTopic());
             }
         }
     }
 
+    public void publish(Message message) {
+        Publish publish = new Publish(message);
+        try {
+            if (message.getQos().ordinal() > Qos.QOS_0.ordinal()) {
+                // need to add to queue for wait the puback, pubrel, ecc. for QOS 1 or 2.
+                getSession().getSended().add(publish);
+            }
+            mTransport.writePacket(publish);
+        } catch (IOException e) {
+            e.printStackTrace();
+            getSession().getSended().remove(publish);
+        }
+    }
 }
