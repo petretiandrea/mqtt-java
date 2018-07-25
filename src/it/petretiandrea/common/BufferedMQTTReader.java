@@ -25,7 +25,7 @@ public class BufferedMQTTReader {
 
         int multiplier = 1;
         int length = 0;
-        byte tmp = 0;
+        byte tmp;
         do {
             tmp = (byte) mBufferedInputStream.read();
             length += (tmp & 127) * multiplier;

@@ -16,22 +16,23 @@ public class Session {
      */
     private QueueMQTT<Subscribe> mSubscriptions;
 
+    /* QoS 1 and QoS 2 messages which have been sent to the Client, but have not been completely acknowledged. */
+    private QueueMQTT<MQTTPacket> mSendedNotAck;
+
     /* QoS 1 and QoS 2 messages pending transmission to the Client. */
+    /* Optionally, QoS 0 messages pending transmission to the Client. */
     private QueueMQTT<MQTTPacket> mPending;
 
-    /* QoS 1 and QoS 2 messages which have been sent to the Client, but have not been completely acknowledged. */
-    private QueueMQTT<MQTTPacket> mSended;
-
     /* QoS 2 messages which have been received from the Client, but have not been completely acknowledged. */
-    private QueueMQTT<MQTTPacket> mReceived;
+    private QueueMQTT<MQTTPacket> mReceivedNotAck;
 
     public Session(String clientID, boolean cleanSession) {
         mClientID = clientID;
         mCleanSession = cleanSession;
         mSubscriptions = new QueueMQTT<>();
+        mSendedNotAck = new QueueMQTT<>();
         mPending = new QueueMQTT<>();
-        mSended = new QueueMQTT<>();
-        mReceived = new QueueMQTT<>();
+
     }
 
     public boolean isCleanSession() {
@@ -46,15 +47,15 @@ public class Session {
         return mSubscriptions;
     }
 
+    public QueueMQTT<MQTTPacket> getSendedNotAck() {
+        return mSendedNotAck;
+    }
+
     public QueueMQTT<MQTTPacket> getPending() {
         return mPending;
     }
 
-    public QueueMQTT<MQTTPacket> getSended() {
-        return mSended;
-    }
-
-    public QueueMQTT<MQTTPacket> getReceived() {
-        return mReceived;
+    public QueueMQTT<MQTTPacket> getReceivedNotAck() {
+        return mReceivedNotAck;
     }
 }

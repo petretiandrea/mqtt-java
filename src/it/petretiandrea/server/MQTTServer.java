@@ -66,12 +66,11 @@ public class MQTTServer {
 
             @Override
             public void onPublishMessageReceived(Message message) {
-                if(message.getQos() == Qos.QOS_0 || message.getQos() == Qos.QOS_1)
-                    mClientsConnected.forEach((s, clientMonitor) ->
-                            clientMonitor.getSession().getSubscriptions().stream()
-                            .filter(subscribe -> subscribe.getTopic().equals(message.getTopic()) && message.getQos().ordinal() <= subscribe.getQosSub().ordinal())
-                            .findFirst()
-                            .ifPresent((sub) -> clientMonitor.publish(message)));
+                mClientsConnected.forEach((s, clientMonitor) ->
+                        clientMonitor.getSession().getSubscriptions().stream()
+                        .filter(subscribe -> subscribe.getTopic().equals(message.getTopic()))
+                        .findAny()
+                        .ifPresent((sub) -> clientMonitor.publish(message)));
             }
         };
     }

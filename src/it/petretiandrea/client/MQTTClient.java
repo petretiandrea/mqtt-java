@@ -276,6 +276,7 @@ public class MQTTClient {
                     // call interface for signal a QOS_2 publish message
                     System.out.println("Message " + comp.getMessageID() + " is published with QOS_2");
                 }
+                break;
             }
             case PINGREQ: // server request for a ping
                 System.out.println("Received PING REQUEST");
