@@ -79,7 +79,7 @@ public class MQTTServer {
             public void onPublishMessageReceived(Message message) {
                 // publish message to other clients.
                 mSessionManager.getSessionList().forEach(session -> session.getSubscriptions().stream()
-                        .filter(sub -> sub.getTopic().equals(message.getTopic()) && sub.getQosSub().ordinal() >= Qos.QOS_1.ordinal())
+                        .filter(sub -> sub.getTopic().equals(message.getTopic()))
                         .forEach((sub) -> {
                             message.setQos(Qos.min(sub.getQosSub(), message.getQos()));
                             session.addPendingPublish(message);
