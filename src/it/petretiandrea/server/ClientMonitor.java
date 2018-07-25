@@ -11,8 +11,11 @@ import it.petretiandrea.core.packet.base.MQTTPacket;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
 
 public class ClientMonitor {
+
+    private static int SOCKET_IO_TIMEOUT = (int) (0.5 * 1000);
 
     /**
      * Transport layer, for communicate with MQTT Client.
@@ -31,10 +34,10 @@ public class ClientMonitor {
      */
     private long mLastPacketReceived;
 
-
     private ClientMonitorServerCallback mServerComm;
-
     private final Thread mThread;
+
+    private final long mPingTimeout;
 
     public ClientMonitor(Transport transport, Session session, Connect settings, ClientMonitorServerCallback serverComm) {
         mTransport = transport;
@@ -42,17 +45,35 @@ public class ClientMonitor {
         mConnectSettings = settings;
         mThread = new Thread(this::run);
         mServerComm = serverComm;
+        mPingTimeout = (mConnectSettings.getKeepAliveSeconds() + (mConnectSettings.getKeepAliveSeconds() / 4)) * 1000;
     }
 
     public void start() {
         mThread.start();
     }
 
+    /**
+     * Publish a message.
+     * @param message Message need to be published.
+     */
+    public void publish(Message message) {
+        Publish publish = new Publish(message);
+        getSession().getPending().add(publish);
+    }
+
+    /**
+     * Get the session associate to this client.
+     * @return The session of this client.
+     */
     public Session getSession() {
         return mSession;
     }
 
-    public CompletableFuture<Void> disconnect() {
+    /**
+     * Close the connection of this client.
+     * @return A Task that disconnect the client.
+     */
+    public CompletableFuture<Void> closeConnection() {
         try {
             mTransport.close();
         } catch (IOException e) {
@@ -69,14 +90,17 @@ public class ClientMonitor {
         });
     }
 
+    /* Behaviour of this Client */
     private void run() {
         try {
             // initialize the timeout for keepalive.
             mLastPacketReceived = System.currentTimeMillis();
             while (!Thread.interrupted()) {
                 try {
+                    // process and send the packet on pending queue.
+                    handlePendingPacket();
                     // read packet
-                    MQTTPacket packet = mTransport.readPacket();
+                    MQTTPacket packet = mTransport.readPacket(SOCKET_IO_TIMEOUT);
                     if(packet != null) {
                         // reset the keep alive, if a packet income
                         resetTimeoutKeepAlive();
@@ -106,7 +130,7 @@ public class ClientMonitor {
      */
     private void checkClientAlive() throws MQTTProtocolException {
         long now = System.currentTimeMillis();
-        if(now - mLastPacketReceived >= mConnectSettings.getKeepAliveSeconds() * 1000) {
+        if(now - mLastPacketReceived > mPingTimeout) {
             // client is not alive.
             throw new MQTTProtocolException("Client timeout expired!");
         }
@@ -119,7 +143,10 @@ public class ClientMonitor {
         mLastPacketReceived = System.currentTimeMillis();
     }
 
-    private void checkQueue() {
+    /**
+     * Handle and send all packet pending of session.
+     */
+    private void handlePendingPacket() {
         // check for pending message to be sended
         // send it and add to sended not ack.
         if(getSession().getPending().size() > 0) {
@@ -137,10 +164,16 @@ public class ClientMonitor {
         }
     }
 
+    /**
+     * Handle and manage a MQTT Packet Received!
+     * @param packet Packet received!
+     * @throws IOException Throw if there is and error during send a response.
+     * @throws MQTTProtocolException Throw if there is a protocol violation.
+     */
     private void handleReceivePacket(MQTTPacket packet) throws IOException, MQTTProtocolException {
         switch (packet.getCommand()) {
             case DISCONNECT:
-                disconnect();
+                closeConnection();
                 break;
             case CONNECT:
                 // duplicate connect packet
@@ -150,9 +183,11 @@ public class ClientMonitor {
                 break;
             case SUBSCRIBE: {
                 Subscribe sub = (Subscribe) packet;
-                getSession().getPending().add(new SubAck(sub.getMessageID(), sub.getQosSub()));
+                mTransport.writePacket(new SubAck(sub.getMessageID(), sub.getQosSub()));
+                // here only if write packet have success, and add it to subscribe topics
                 getSession().getSubscriptions().add(sub);
                 System.out.println(getSession().getClientID() + "\tsubscribed to: " + sub.getTopic());
+                mServerComm.onSubscriptionReceived(this, sub);
                 break;
             }
             case PUBLISH: {
@@ -161,110 +196,71 @@ public class ClientMonitor {
                     mServerComm.onPublishMessageReceived(pub.getMessage());
                 } else if(pub.getQos() == Qos.QOS_1) {
                     mServerComm.onPublishMessageReceived(pub.getMessage());
-                    getSession().getPending().add(new PubAck(pub.getMessage().getMessageID()));
+                    mTransport.writePacket(new PubAck(pub.getMessage().getMessageID()));
                 } else if(pub.getQos() == Qos.QOS_2) {
-                    // store message into QOS 1, QOS 2 sent to client but not ack
+                    // store message into QOS 1, QOS 2 sent to client but not completly acked.
                     getSession().getReceivedNotAck().add(pub);
-                    getSession().getPending().add(new PubRec(pub.getMessage().getMessageID()));
+                    mTransport.writePacket(new PubRec(pub.getMessage().getMessageID()));
                 }
                 break;
             }
             case PUBACK: {
+                PubAck pubAck = (PubAck) packet;
+                getSession().getSendedNotAck().stream()
+                        .filter(packet1 -> (packet1 instanceof Publish) &&((Publish) packet1).getMessage().getMessageID() == pubAck.getMessageID())
+                        .findFirst()
+                        // now i can remove the published message, beacouse is acked.
+                        .ifPresent(publish -> getSession().getSendedNotAck().remove(publish));
+                break;
+            }
+            case PUBREL: { // step for receive from client publish QOS_2
+                PubRel rel = (PubRel) packet;
+                // remove the message received, beacouse now is completly acked.
+                getSession().getReceivedNotAck().stream()
+                        .filter(packet12 -> (packet12 instanceof Publish) && ((Publish) packet12).getMessage().getMessageID() == rel.getMessageID())
+                        .findFirst()
+                        .ifPresent(packet15 -> {
+                            if(packet15 instanceof Publish) {
+                                // publish to other clients subscribed
+                                mServerComm.onPublishMessageReceived(((Publish) packet15).getMessage());
+                                // send a pubcomp
+                                try {
+                                    mTransport.writePacket(new PubComp(rel.getMessageID()));
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        });
 
                 break;
             }
-            /*case PUBREL: {
-                PubRel rel = (PubRel) packet;
-                Publish publish = (Publish) getSession().getPending().stream().filter(packet12 -> {
-                    if(packet12 instanceof PubRec)
-                        return ((PubRec) packet12).getMessageID() == rel.getMessageID();
-                    return false;
-                }).findFirst().orElse(null);
-                if(publish != null) {
-                    getSession().getPending().remove(publish);
-                    // send to other
-                    mServerComm.onPublishMessageReceived(publish.getMessage());
-                    // write pubcomp
-                    mTransport.writePacket(new PubComp(rel.getMessageID()));
-                    System.out.println("Message QOS 2 received!");
-                }
+            case PUBREC: { // 1st step for QOS_2 message sended to Client.
+                PubRec rec = (PubRec) packet;
+                // discard the publish message from sended not acked.
+                getSession().getSendedNotAck()
+                        .removeIf(packet13 -> (packet13 instanceof Publish) && ((Publish) packet13).getMessage().getMessageID() == rec.getMessageID());
+                // store pub rec received.
+                getSession().getReceivedNotAck().add(rec);
+                // send a pub rel.
+                mTransport.writePacket(new PubRel(rec.getMessageID()));
                 break;
             }
-            case PUBACK: {// for published message with QOS_1;
-                PubAck pubAck = (PubAck) packet;
-                // find publish message with same messageid.
-                Publish publish = (Publish) getSession().getSended().stream().filter(packet1 -> {
-                    if(packet1 instanceof Publish)
-                        return ((Publish) packet1).getMessage().getMessageID() == pubAck.getMessageID();
-                    return false;
-                }).findFirst().orElse(null);
-                if(publish != null) {
-                    getSession().getSended().remove(publish);
-                    // call interface for signal a QOS_1 publish message
-                    System.out.println("Message " + publish.getMessage().getMessageID() + " is published with QOS_1");
-                }
-                break;
-            }
-            case PUBREC: {
-                // 1st step for publish a QOS_2 message
-                PubRec pubRec = (PubRec) packet;
-                Publish publish = (Publish) getSession().getSended().stream().filter(packet1 -> {
-                    if(packet1 instanceof Publish)
-                        return ((Publish) packet1).getMessage().getMessageID() == pubRec.getMessageID();
-                    return false;
-                }).findFirst().orElse(null);
-                if(publish != null) {
-                    // found remove it
-                    getSession().getSended().remove(publish);
-                    // add pub rec to incoming message
-                    getSession().getPending().add(pubRec);
-                    // send a pub rel
-                    mTransport.writePacket(new PubRel(pubRec.getMessageID()));
-                }
-                break;
-            }
-            case PUBCOMP: { // 2st step for publish a QOS_2 message
-                PubComp comp = (PubComp) packet;
-                // find a stored pubRec
-                PubRec pubRec = (PubRec) getSession().getPending().stream().filter(packet12 -> {
-                    if(packet12 instanceof PubRec)
-                        return ((PubRec) packet12).getMessageID() == comp.getMessageID();
-                    return false;
-                }).findFirst().orElse(null);
-                if(pubRec != null) {
-                    // found remove it!
-                    getSession().getPending().remove(pubRec);
-                    // call interface for signal a QOS_2 publish message
-                    System.out.println("Message " + comp.getMessageID() + " is published with QOS_2");
-                }
+            case PUBCOMP: { // 2rd step for QOS_2 message sended to Client
+                PubComp pubComp = (PubComp) packet;
+                // removed pub rec received but not completly acked.
+                getSession().getReceivedNotAck()
+                        .removeIf(packet14 -> (packet14 instanceof PubRec) && ((PubRec) packet14).getMessageID() == pubComp.getMessageID());
+                System.out.println("QOS_2 Publish completed!");
                 break;
             }
             case UNSUBSCRIBE: {
                 Unsubscribe unsubscribe = (Unsubscribe) packet;
-                getSession().getSubscriptions().stream()
-                        .filter(subscribe -> subscribe.getTopic().equals(unsubscribe.getTopic()))
-                        .findAny()
-                        .ifPresent(subscribe -> getSession().getSubscriptions().remove(subscribe));
                 mTransport.writePacket(new UnsubAck(unsubscribe.getMessageID()));
-                System.out.println("Unsubscribe from: " + unsubscribe.getTopic());
+                getSession().getSubscriptions()
+                        .removeIf(subscribe -> subscribe.getTopic().equals(unsubscribe.getTopic()));
+                System.out.println(getSession().getClientID() + "\tunsubscribed from: " + unsubscribe.getTopic());
                 break;
-            }*/
-        }
-    }
-
-    public void publish(Message message) {
-        Publish publish = new Publish(message);
-        getSession().getPending().add(publish);
-        /*Publish publish = new Publish(message);
-        try {
-            if (message.getQos().ordinal() > Qos.QOS_0.ordinal()) {
-                // need to add to queue for wait the puback, pubrel, ecc. for QOS 1 or 2.
-                getSession().getSended().add(publish);
             }
-            mTransport.writePacket(publish);
-        } catch (IOException e) {
-            e.printStackTrace();
-            getSession().getSended().remove(publish);
-        }*/
+        }
     }
 }

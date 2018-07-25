@@ -97,6 +97,7 @@ public class TransportTCP implements Transport {
         mLockWrite.lock();
         try {
             mSocket.getOutputStream().write(data);
+            mSocket.getOutputStream().flush();
         } finally {
             mLockWrite.unlock();
         }

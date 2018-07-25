@@ -1,6 +1,8 @@
 package it.petretiandrea.server;
 
 import it.petretiandrea.common.QueueMQTT;
+import it.petretiandrea.core.Message;
+import it.petretiandrea.core.packet.Publish;
 import it.petretiandrea.core.packet.Subscribe;
 import it.petretiandrea.core.packet.base.MQTTPacket;
 
@@ -32,7 +34,7 @@ public class Session {
         mSubscriptions = new QueueMQTT<>();
         mSendedNotAck = new QueueMQTT<>();
         mPending = new QueueMQTT<>();
-
+        mReceivedNotAck = new QueueMQTT<>();
     }
 
     public boolean isCleanSession() {
@@ -57,5 +59,9 @@ public class Session {
 
     public QueueMQTT<MQTTPacket> getReceivedNotAck() {
         return mReceivedNotAck;
+    }
+
+    public void addPendingPublish(Message message) {
+        getPending().add(new Publish(message));
     }
 }

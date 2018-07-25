@@ -1,6 +1,8 @@
 package it.petretiandrea.server;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -68,5 +70,9 @@ public class SessionManager {
             if(s.isCleanSession())
                 mSessions.remove(clientID);
         }
+    }
+
+    public Collection<Session> getSessionList() {
+        return mSessions.values();
     }
 }

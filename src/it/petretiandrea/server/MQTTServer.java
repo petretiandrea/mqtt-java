@@ -1,5 +1,6 @@
 package it.petretiandrea.server;
 
+import it.petretiandrea.common.QueueMQTT;
 import it.petretiandrea.common.Transport;
 import it.petretiandrea.common.TransportTCP;
 import it.petretiandrea.core.ConnectionStatus;
@@ -14,17 +15,13 @@ import it.petretiandrea.server.security.AccountManager;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.function.BiConsumer;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class MQTTServer {
 
-    public static final int TIMEOUT_CONNECT = 10000;
+    private static final int TIMEOUT_CONNECT = 20000; //20 sec.
 
     private static final Executor CLIENTS_POOL = Executors.newCachedThreadPool();
 
@@ -39,6 +36,11 @@ public class MQTTServer {
     private ConcurrentMap<String, ClientMonitor> mClientsConnected;
 
     /**
+     * Retain messages.
+     */
+    private ConcurrentLinkedQueue<Message> mRetainMessages;
+
+    /**
      * Session manager, for manage the sessions active, and the persistent sessions.
      */
     private SessionManager mSessionManager;
@@ -51,6 +53,7 @@ public class MQTTServer {
     public MQTTServer() {
         mSessionManager = new SessionManager();
         mClientsConnected = new ConcurrentHashMap<>();
+        mRetainMessages = new ConcurrentLinkedQueue<>();
         mServerSocket = null;
         mClientMonitorServerCallback = new ClientMonitorServerCallback() {
             @Override
@@ -65,12 +68,32 @@ public class MQTTServer {
             }
 
             @Override
+            public void onSubscriptionReceived(ClientMonitor client, Subscribe subscribe) {
+                // publish a retain message.
+                mRetainMessages.stream()
+                        .filter(message -> message.getTopic().equals(subscribe.getTopic()))
+                        .forEach(client::publish);
+            }
+
+            @Override
             public void onPublishMessageReceived(Message message) {
-                mClientsConnected.forEach((s, clientMonitor) ->
-                        clientMonitor.getSession().getSubscriptions().stream()
-                        .filter(subscribe -> subscribe.getTopic().equals(message.getTopic()))
-                        .findAny()
-                        .ifPresent((sub) -> clientMonitor.publish(message)));
+                // publish message to other clients.
+                mSessionManager.getSessionList().forEach(session -> session.getSubscriptions().stream()
+                        .filter(sub -> sub.getTopic().equals(message.getTopic()) && sub.getQosSub().ordinal() >= Qos.QOS_1.ordinal())
+                        .forEach((sub) -> {
+                            message.setQos(Qos.min(sub.getQosSub(), message.getQos()));
+                            session.addPendingPublish(message);
+                        }));
+
+                // retain message, need to be added to retains message
+                if(message.isRetain()) {
+                    if(message.getMessage().trim().isEmpty())
+                        mRetainMessages.stream()
+                                .filter(message1 -> message1.getTopic().equals(message.getTopic()))
+                                .forEach((msg) -> mRetainMessages.remove(msg));
+                    else
+                        mRetainMessages.add(message);
+                }
             }
         };
     }
@@ -177,14 +200,14 @@ public class MQTTServer {
     }
 
     /**
-     * Method for disconnect a Client, auto clean the session if needed, and remove the client from list of connected.
+     * Method for closeConnection a Client, auto clean the session if needed, and remove the client from list of connected.
      * @param clientID The ID of Client
      */
     private void disconnectClient(String clientID) {
         if(mClientsConnected.containsKey(clientID)) {
             // another client with same client id
             // wait for disconnection.
-            mClientsConnected.get(clientID).disconnect().join();
+            mClientsConnected.get(clientID).closeConnection().join();
         }
     }
 }

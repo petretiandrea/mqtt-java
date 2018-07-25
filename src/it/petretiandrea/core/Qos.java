@@ -18,4 +18,13 @@ public enum Qos {
                 .findFirst()
                 .orElseThrow(() -> new MQTTParseException("Invalid QOS", MQTTParseException.Reason.INVALID_QOS));
     }
+
+    public static Qos min(Qos qos1, Qos qos2) {
+        try {
+            return fromInteger(Math.min(qos1.ordinal(), qos2.ordinal()));
+        } catch (MQTTParseException e) {
+            e.printStackTrace();
+        }
+        return QOS_0;
+    }
 }

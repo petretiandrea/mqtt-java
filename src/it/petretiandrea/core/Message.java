@@ -63,6 +63,10 @@ public class Message {
         return mRetain;
     }
 
+    public void setQos(Qos qos) {
+        mQos = qos;
+    }
+
     public boolean isDup() {
         return mDup;
     }
