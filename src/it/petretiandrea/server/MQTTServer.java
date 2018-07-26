@@ -1,8 +1,7 @@
 package it.petretiandrea.server;
 
-import it.petretiandrea.common.QueueMQTT;
-import it.petretiandrea.common.Transport;
-import it.petretiandrea.common.TransportTCP;
+import it.petretiandrea.common.network.Transport;
+import it.petretiandrea.common.network.TransportTCP;
 import it.petretiandrea.core.ConnectionStatus;
 import it.petretiandrea.core.Message;
 import it.petretiandrea.core.Qos;
@@ -16,8 +15,7 @@ import it.petretiandrea.server.security.AccountManager;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.concurrent.*;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
+import java.util.function.BiConsumer;
 
 public class MQTTServer {
 
@@ -41,7 +39,7 @@ public class MQTTServer {
     private ConcurrentLinkedQueue<Message> mRetainMessages;
 
     /**
-     * Session manager, for manage the sessions active, and the persistent sessions.
+     * ServerSession manager, for manage the sessions active, and the persistent sessions.
      */
     private SessionManager mSessionManager;
 
@@ -137,7 +135,7 @@ public class MQTTServer {
                             disconnectClient(connect.getClientID());
 
                             // 5. Process the clean session flag, and search or create a new session.
-                            Session session = null;
+                            ServerSession session = null;
                             boolean isPresent = false;
                             if(connect.isCleanSession()) {
                                 // remove any old permanent session
@@ -209,5 +207,18 @@ public class MQTTServer {
             // wait for disconnection.
             mClientsConnected.get(clientID).closeConnection().join();
         }
+    }
+
+    public CompletableFuture<Void> shutdownServer() {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                // close all client connections.
+                mClientsConnected.forEach((s, clientMonitor) -> clientMonitor.closeConnection().join());
+                mServerSocket.close();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
 }

@@ -1,12 +1,11 @@
-package it.petretiandrea.common;
+package it.petretiandrea.common.network;
 
 import it.petretiandrea.core.exception.MQTTParseException;
 import it.petretiandrea.core.packet.base.MQTTPacket;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -19,11 +18,24 @@ public class TransportTCP implements Transport {
     private Socket mSocket;
     private BufferedMQTTReader mMQTTReader;
 
+    public TransportTCP() throws IOException {
+        this(null);
+    }
+
     public TransportTCP(Socket socket) throws IOException {
         mSocket = socket;
         mLockWrite = new ReentrantLock(true);
         mLockRead = new ReentrantLock(true);
-        mMQTTReader = new BufferedMQTTReader(mSocket.getInputStream());
+        mMQTTReader = (socket != null) ? new BufferedMQTTReader(mSocket.getInputStream()) : null;
+    }
+
+    @Override
+    public void connect(SocketAddress socketAddress) throws IOException {
+        if(mSocket == null) {
+            mSocket = new Socket();
+            mSocket.connect(socketAddress);
+            mMQTTReader = new BufferedMQTTReader(mSocket.getInputStream());
+        }
     }
 
     /**
@@ -47,7 +59,7 @@ public class TransportTCP implements Transport {
     }
 
     /**
-     * Read a MQTTPacket from transport object.
+     * Read a MQTTPacket from network object.
      * @return A valid MQTTPacket, null otherwise.
      * @throws IOException If there is an error on socket.
      * @throws MQTTParseException If the packet is not a valid MQTT packet.

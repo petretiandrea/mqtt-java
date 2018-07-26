@@ -1,6 +1,6 @@
 package it.petretiandrea.server;
 
-import it.petretiandrea.common.Transport;
+import it.petretiandrea.common.network.Transport;
 import it.petretiandrea.core.Message;
 import it.petretiandrea.core.Qos;
 import it.petretiandrea.core.exception.MQTTParseException;
@@ -11,7 +11,6 @@ import it.petretiandrea.core.packet.base.MQTTPacket;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Predicate;
 
 public class ClientMonitor {
 
@@ -28,7 +27,7 @@ public class ClientMonitor {
     /**
      * Current session for MQTT Client.
      */
-    private Session mSession;
+    private ServerSession mSession;
     /**
      * Time of last packet received from MQTT Client. Used for keepalive timeout.
      */
@@ -39,7 +38,7 @@ public class ClientMonitor {
 
     private final long mPingTimeout;
 
-    public ClientMonitor(Transport transport, Session session, Connect settings, ClientMonitorServerCallback serverComm) {
+    public ClientMonitor(Transport transport, ServerSession session, Connect settings, ClientMonitorServerCallback serverComm) {
         mTransport = transport;
         mSession = session;
         mConnectSettings = settings;
@@ -65,7 +64,7 @@ public class ClientMonitor {
      * Get the session associate to this client.
      * @return The session of this client.
      */
-    public Session getSession() {
+    public ServerSession getSession() {
         return mSession;
     }
 
@@ -122,6 +121,9 @@ public class ClientMonitor {
             e.printStackTrace();
         }
         mServerComm.onClientDisconnect(this);
+        // publish will message to other clients
+        if(mConnectSettings.getWillMessage() != null)
+            mServerComm.onPublishMessageReceived(mConnectSettings.getWillMessage());
     }
 
     /**

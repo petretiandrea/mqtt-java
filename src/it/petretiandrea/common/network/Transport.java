@@ -1,12 +1,14 @@
-package it.petretiandrea.common;
+package it.petretiandrea.common.network;
 
 import it.petretiandrea.core.exception.MQTTParseException;
 import it.petretiandrea.core.packet.base.MQTTPacket;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.net.SocketAddress;
 
 public interface Transport {
+
+    void connect(SocketAddress socketAddress) throws IOException;
 
     MQTTPacket readPacket(int timeout) throws IOException, MQTTParseException;
     MQTTPacket readPacket() throws IOException, MQTTParseException;

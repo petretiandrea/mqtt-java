@@ -2,18 +2,8 @@ package it.petretiandrea;
 
 import it.petretiandrea.client.MQTTClient;
 import it.petretiandrea.core.*;
-import it.petretiandrea.core.packet.ConnAck;
-import it.petretiandrea.core.packet.Connect;
-import it.petretiandrea.core.packet.SubAck;
-import it.petretiandrea.core.packet.base.MQTTPacket;
-import it.petretiandrea.core.packet.Subscribe;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
 
 public class Main {
 
@@ -47,7 +37,7 @@ public class Main {
 
         System.in.read();
 
-        System.out.println("Disconnetion: " + client.disconnet());
+        System.out.println("Disconnetion: " + client.disconnect());
 
         /*
 

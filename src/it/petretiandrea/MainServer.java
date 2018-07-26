@@ -22,7 +22,7 @@ public class MainServer {
                 .setHostname("localhost")
                 .setPort(1883)
                 .setClientId("Bellooo")
-                .setKeepAliveSeconds(5)
+                .setKeepAliveSeconds(10)
                 .setCleanSession(true)
                 .setWillMessage(new Message("topicWill", "ciaoo", Qos.QOS_2, true))
                 .build();
@@ -31,13 +31,15 @@ public class MainServer {
         MQTTClient client = new MQTTClient(settings);
         try {
             System.out.println(client.connect());
+            client.subscribe("topicbello", Qos.QOS_1);
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         System.in.read();
         System.out.println("Disconnect");
-        client.disconnet();
+        client.disconnect();
         System.in.read();
+        server.shutdownServer().join();
     }
 }

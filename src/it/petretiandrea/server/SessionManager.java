@@ -1,11 +1,7 @@
 package it.petretiandrea.server;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -16,7 +12,7 @@ public class SessionManager {
     /**
      * The map that contains the session for each client id.
      */
-    private ConcurrentMap<String, Session> mSessions;
+    private ConcurrentMap<String, ServerSession> mSessions;
 
     /**
      * Constructor Method.
@@ -30,7 +26,7 @@ public class SessionManager {
      * @param clientID The client id
      * @return The session if found, Null otherwise.
      */
-    public Session searchSession(String clientID) {
+    public ServerSession searchSession(String clientID) {
         if(mSessions.containsKey(clientID))
             return mSessions.get(clientID);
         return null;
@@ -41,7 +37,7 @@ public class SessionManager {
      * @param session The session.
      * @return True if added, False if already exist, or fail.
      */
-    private boolean addSession(Session session) {
+    private boolean addSession(ServerSession session) {
         if(mSessions.containsKey(session.getClientID()))
            return false;
         mSessions.putIfAbsent(session.getClientID(), session);
@@ -54,8 +50,8 @@ public class SessionManager {
      * @param cleanSession If the session need to be cleaned at end of communication
      * @return The new session.
      */
-    public Session createNewSession(String clientID, boolean cleanSession) {
-        Session s = new Session(clientID, cleanSession);
+    public ServerSession createNewSession(String clientID, boolean cleanSession) {
+        ServerSession s = new ServerSession(clientID, cleanSession);
         addSession(s);
         return s;
     }
@@ -66,13 +62,13 @@ public class SessionManager {
      */
     public void cleanSession(String clientID) {
         if(mSessions.containsKey(clientID)) {
-            Session s = mSessions.get(clientID);
+            ServerSession s = mSessions.get(clientID);
             if(s.isCleanSession())
                 mSessions.remove(clientID);
         }
     }
 
-    public Collection<Session> getSessionList() {
+    public Collection<ServerSession> getSessionList() {
         return mSessions.values();
     }
 }

@@ -1,4 +1,4 @@
-package it.petretiandrea.common;
+package it.petretiandrea.common.network;
 
 import it.petretiandrea.core.exception.MQTTParseException;
 import it.petretiandrea.core.Utils;
