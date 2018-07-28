@@ -1,7 +1,8 @@
 package it.petretiandrea.core.packet;
 
 import it.petretiandrea.core.Qos;
-import it.petretiandrea.core.Utils;
+import it.petretiandrea.utils.MessageIDGenerator;
+import it.petretiandrea.utils.Utils;
 import it.petretiandrea.core.packet.base.MQTTPacket;
 import it.petretiandrea.core.exception.MQTTParseException;
 
@@ -10,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import static it.petretiandrea.core.Utils.*;
+import static it.petretiandrea.utils.Utils.*;
 
 public class Unsubscribe extends MQTTPacket {
 
@@ -18,14 +19,11 @@ public class Unsubscribe extends MQTTPacket {
     private String mTopic;
 
     public Unsubscribe(String topic) {
-        this(new Random().nextInt(), topic);
-    }
-
-    public Unsubscribe(int messageID, String topic) {
         super(MQTTPacket.Type.UNSUBSCRIBE, false, Qos.QOS_1, false);
-        mMessageID = messageID;
+        mMessageID = MessageIDGenerator.getInstance().nextMessageID();
         mTopic = topic;
     }
+
 
     public Unsubscribe(byte fixedHeader, byte[] body) throws MQTTParseException, UnsupportedEncodingException {
         super(fixedHeader);

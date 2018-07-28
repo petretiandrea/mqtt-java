@@ -6,7 +6,7 @@ import it.petretiandrea.core.packet.base.MQTTPacket;
 
 import java.io.UnsupportedEncodingException;
 
-import static it.petretiandrea.core.Utils.GenerateFixedHeader;
+import static it.petretiandrea.utils.Utils.GenerateFixedHeader;
 
 public class PingResp extends MQTTPacket {
 

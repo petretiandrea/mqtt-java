@@ -5,8 +5,8 @@ import it.petretiandrea.core.exception.MQTTParseException;
 
 import java.io.UnsupportedEncodingException;
 
-import static it.petretiandrea.core.Utils.GenerateFixedHeader;
-import static it.petretiandrea.core.Utils.Join;
+import static it.petretiandrea.utils.Utils.GenerateFixedHeader;
+import static it.petretiandrea.utils.Utils.Join;
 
 public class PubRec extends ACK {
 

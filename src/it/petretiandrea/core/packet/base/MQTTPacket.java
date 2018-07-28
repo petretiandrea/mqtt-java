@@ -3,12 +3,10 @@ package it.petretiandrea.core.packet.base;
 import it.petretiandrea.core.Qos;
 import it.petretiandrea.core.packet.*;
 import it.petretiandrea.core.exception.MQTTParseException;
-import it.petretiandrea.core.Utils;
+import it.petretiandrea.utils.Utils;
 
-import javax.rmi.CORBA.Util;
 import java.io.UnsupportedEncodingException;
 import java.util.EnumSet;
-import java.util.function.Supplier;
 
 public abstract class MQTTPacket {
 

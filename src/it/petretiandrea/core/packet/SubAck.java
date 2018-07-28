@@ -1,12 +1,12 @@
 package it.petretiandrea.core.packet;
 
 import it.petretiandrea.core.Qos;
-import it.petretiandrea.core.Utils;
+import it.petretiandrea.utils.Utils;
 import it.petretiandrea.core.packet.base.MQTTPacket;
 import it.petretiandrea.core.exception.MQTTParseException;
 
-import static it.petretiandrea.core.Utils.GenerateFixedHeader;
-import static it.petretiandrea.core.Utils.Join;
+import static it.petretiandrea.utils.Utils.GenerateFixedHeader;
+import static it.petretiandrea.utils.Utils.Join;
 
 public class SubAck extends MQTTPacket {
 

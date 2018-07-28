@@ -3,13 +3,13 @@ package it.petretiandrea.core.packet;
 import it.petretiandrea.core.*;
 import it.petretiandrea.core.packet.base.MQTTPacket;
 import it.petretiandrea.core.exception.MQTTParseException;
-import it.petretiandrea.core.Utils;
+import it.petretiandrea.utils.Utils;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static it.petretiandrea.core.Utils.*;
+import static it.petretiandrea.utils.Utils.*;
 import static it.petretiandrea.core.exception.MQTTParseException.Reason;
 
 public class Connect extends MQTTPacket {

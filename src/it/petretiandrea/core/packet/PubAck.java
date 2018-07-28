@@ -6,8 +6,8 @@ import it.petretiandrea.core.packet.base.MQTTPacket;
 
 import java.io.UnsupportedEncodingException;
 
-import static it.petretiandrea.core.Utils.GenerateFixedHeader;
-import static it.petretiandrea.core.Utils.Join;
+import static it.petretiandrea.utils.Utils.GenerateFixedHeader;
+import static it.petretiandrea.utils.Utils.Join;
 
 public class PubAck extends ACK {
 

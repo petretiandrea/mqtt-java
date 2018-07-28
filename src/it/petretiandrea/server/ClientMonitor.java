@@ -1,5 +1,6 @@
 package it.petretiandrea.server;
 
+import it.petretiandrea.common.PacketDispatcher;
 import it.petretiandrea.common.network.Transport;
 import it.petretiandrea.core.Message;
 import it.petretiandrea.core.Qos;

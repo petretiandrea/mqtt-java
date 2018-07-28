@@ -1,6 +1,6 @@
 package it.petretiandrea.core;
 
-import java.util.Random;
+import it.petretiandrea.utils.MessageIDGenerator;
 
 public class Message {
 
@@ -16,9 +16,9 @@ public class Message {
         mTopic = topic;
         mMessage = message;
         mQos = qos;
-        // for qos 1 and 2 the message id need to be set to random int
+        // for qos 1 and 2 the message id need to be set
         if(qos.ordinal() > Qos.QOS_0.ordinal())
-            mMessageID = new Random().nextInt(65535);
+            mMessageID = MessageIDGenerator.getInstance().nextMessageID();
         else
             mMessageID = 0; // for qos0 the message id is 0.
     }
@@ -29,7 +29,7 @@ public class Message {
         mMessage = message;
         mQos = qos;
         if(qos.ordinal() > Qos.QOS_0.ordinal())
-            mMessageID = (messageID > 65535) ? new Random().nextInt(65535 ) : messageID;
+            mMessageID = MessageIDGenerator.getInstance().nextMessageID();
         else
             mMessageID = 0; // for qos0 the message id is 0.
     }

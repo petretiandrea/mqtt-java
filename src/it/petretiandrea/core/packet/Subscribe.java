@@ -1,7 +1,8 @@
 package it.petretiandrea.core.packet;
 
 import it.petretiandrea.core.Qos;
-import it.petretiandrea.core.Utils;
+import it.petretiandrea.utils.MessageIDGenerator;
+import it.petretiandrea.utils.Utils;
 import it.petretiandrea.core.packet.base.MQTTPacket;
 import it.petretiandrea.core.exception.MQTTParseException;
 
@@ -10,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import static it.petretiandrea.core.Utils.*;
+import static it.petretiandrea.utils.Utils.*;
 
 public class Subscribe extends MQTTPacket {
 
@@ -19,14 +20,11 @@ public class Subscribe extends MQTTPacket {
     private Qos mQosSub;
 
     public Subscribe(String topic, Qos qosSub) {
-        this(new Random().nextInt(65535), topic, qosSub);
-    }
-
-    public Subscribe(int messageID, String topic, Qos qosSub) {
         super(MQTTPacket.Type.SUBSCRIBE, false, Qos.QOS_1, false);
-        mMessageID = messageID > 65535 ? new Random().nextInt(65535) : messageID;
+        mMessageID = MessageIDGenerator.getInstance().nextMessageID();
         mTopic = topic;
         mQosSub = qosSub;
+
     }
 
     public Subscribe(byte fixedHeader, byte[] body) throws MQTTParseException, UnsupportedEncodingException {

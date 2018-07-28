@@ -2,7 +2,7 @@ package it.petretiandrea.core.packet;
 
 import it.petretiandrea.core.Message;
 import it.petretiandrea.core.Qos;
-import it.petretiandrea.core.Utils;
+import it.petretiandrea.utils.Utils;
 import it.petretiandrea.core.packet.base.MQTTPacket;
 import it.petretiandrea.core.exception.MQTTParseException;
 
@@ -10,7 +10,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static it.petretiandrea.core.Utils.*;
+import static it.petretiandrea.utils.Utils.*;
 
 public class Publish extends MQTTPacket {
 
