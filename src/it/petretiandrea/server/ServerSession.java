@@ -14,8 +14,8 @@ public class ServerSession extends Session {
      */
     private QueueMQTT<Subscribe> mSubscriptions;
 
-    /* QoS 1 and QoS 2 messages pending transmission to the Client. */
-    /* Optionally, QoS 0 messages pending transmission to the Client. */
+    /* QoS 1 and QoS 2 messages pending transmission to the MQTTClient. */
+    /* Optionally, QoS 0 messages pending transmission to the MQTTClient. */
     private QueueMQTT<MQTTPacket> mPending;
 
     public ServerSession(String clientID, boolean cleanSession) {

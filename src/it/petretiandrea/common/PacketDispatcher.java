@@ -1,5 +1,6 @@
 package it.petretiandrea.common;
 
+import it.petretiandrea.core.exception.MQTTProtocolException;
 import it.petretiandrea.core.packet.*;
 import it.petretiandrea.core.packet.base.MQTTPacket;
 
@@ -28,7 +29,7 @@ public class PacketDispatcher {
         mPacketReceiver = packetReceiver;
     }
 
-    public void dispatch(MQTTPacket packet) {
+    public void dispatch(MQTTPacket packet) throws MQTTProtocolException {
         if(packet != null) {
             switch (packet.getCommand()) {
                 case CONNECT:

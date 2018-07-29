@@ -18,19 +18,19 @@ public class ClientMonitor {
     private static int SOCKET_IO_TIMEOUT = (int) (0.5 * 1000);
 
     /**
-     * Transport layer, for communicate with MQTT Client.
+     * Transport layer, for communicate with MQTT MQTTClient.
      */
     private Transport mTransport;
     /**
-     * Connect packet sended by MQTT Client, contains all connection configuration.
+     * Connect packet sended by MQTT MQTTClient, contains all connection configuration.
      */
     private Connect mConnectSettings;
     /**
-     * Current session for MQTT Client.
+     * Current session for MQTT MQTTClient.
      */
     private ServerSession mSession;
     /**
-     * Time of last packet received from MQTT Client. Used for keepalive timeout.
+     * Time of last packet received from MQTT MQTTClient. Used for keepalive timeout.
      */
     private long mLastPacketReceived;
 
@@ -90,7 +90,7 @@ public class ClientMonitor {
         });
     }
 
-    /* Behaviour of this Client */
+    /* Behaviour of this MQTTClient */
     private void run() {
         try {
             // initialize the timeout for keepalive.
@@ -135,7 +135,7 @@ public class ClientMonitor {
         long now = System.currentTimeMillis();
         if(now - mLastPacketReceived > mPingTimeout) {
             // client is not alive.
-            throw new MQTTProtocolException("Client timeout expired!");
+            throw new MQTTProtocolException("MQTTClient timeout expired!");
         }
     }
 
@@ -237,7 +237,7 @@ public class ClientMonitor {
 
                 break;
             }
-            case PUBREC: { // 1st step for QOS_2 message sended to Client.
+            case PUBREC: { // 1st step for QOS_2 message sended to MQTTClient.
                 PubRec rec = (PubRec) packet;
                 // discard the publish message from sended not acked.
                 getSession().getSendedNotAck()
@@ -248,7 +248,7 @@ public class ClientMonitor {
                 mTransport.writePacket(new PubRel(rec.getMessageID()));
                 break;
             }
-            case PUBCOMP: { // 2rd step for QOS_2 message sended to Client
+            case PUBCOMP: { // 2rd step for QOS_2 message sended to MQTTClient
                 PubComp pubComp = (PubComp) packet;
                 // removed pub rec received but not completly acked.
                 getSession().getReceivedNotAck()

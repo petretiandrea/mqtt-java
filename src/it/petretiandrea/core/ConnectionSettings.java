@@ -55,4 +55,18 @@ public class ConnectionSettings {
     public int getKeepAliveSeconds() {
         return mKeepAliveSeconds;
     }
+
+    @Override
+    public String toString() {
+        return "ConnectionSettings{" +
+                "mHostname='" + mHostname + '\'' +
+                ", mPort=" + mPort +
+                ", mClientId='" + mClientId + '\'' +
+                ", mUsername='" + mUsername + '\'' +
+                ", mPassword='" + mPassword + '\'' +
+                ", mCleanSession=" + mCleanSession +
+                ", willMessage=" + willMessage +
+                ", mKeepAliveSeconds=" + mKeepAliveSeconds +
+                '}';
+    }
 }

@@ -56,7 +56,7 @@ public class MQTTServer {
         mClientMonitorServerCallback = new ClientMonitorServerCallback() {
             @Override
             public void onClientDisconnect(ClientMonitor clientMonitor) {
-                System.out.println("Client Disconnected!");
+                System.out.println("MQTTClient Disconnected!");
                 if(mClientsConnected.containsKey(clientMonitor.getSession().getClientID())) {
                     /* Remove the client from the list */
                     mClientsConnected.remove(clientMonitor.getSession().getClientID());
@@ -131,7 +131,7 @@ public class MQTTServer {
                         // 3. Perform authentication.
                         if(tryValidateUsernamePassword(connect.getUsername(), connect.getPassword())) {
 
-                            // 4. Disconnect an existing Client with same ClientID.
+                            // 4. Disconnect an existing MQTTClient with same ClientID.
                             disconnectClient(connect.getClientID());
 
                             // 5. Process the clean session flag, and search or create a new session.
@@ -147,7 +147,7 @@ public class MQTTServer {
                                 if(!isPresent)
                                     session = mSessionManager.createNewSession(connect.getClientID(), false);
                             }
-                            // 6. Send ack with zero code (all is ok), to Client.
+                            // 6. Send ack with zero code (all is ok), to MQTTClient.
                             transport.writePacket(new ConnAck(isPresent, ConnectionStatus.ACCEPT));
 
                             // 7. Start the message and keep alive monitoring.
@@ -198,8 +198,8 @@ public class MQTTServer {
     }
 
     /**
-     * Method for closeConnection a Client, auto clean the session if needed, and remove the client from list of connected.
-     * @param clientID The ID of Client
+     * Method for closeConnection a MQTTClient, auto clean the session if needed, and remove the client from list of connected.
+     * @param clientID The ID of MQTTClient
      */
     private void disconnectClient(String clientID) {
         if(mClientsConnected.containsKey(clientID)) {

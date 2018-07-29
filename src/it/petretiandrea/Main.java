@@ -1,9 +1,5 @@
 package it.petretiandrea;
 
-import it.petretiandrea.client.Client;
-import it.petretiandrea.client.MQTTClient;
-import it.petretiandrea.core.*;
-
 import java.io.IOException;
 
 public class Main {
@@ -11,17 +7,17 @@ public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
 	    // write your code here
 
-        ConnectionSettings settings = new ConnectionSettingsBuilder()
+      /*  ConnectionSettings settings = new ConnectionSettingsBuilder()
                 .setHostname("192.168.1.105")
                 .setPort(1883)
                 .setClientId("Bellooo")
                 .setKeepAliveSeconds(5)
-                .setCleanSession(true)
+                .setCleanSession(false)
                 .setWillMessage(new Message("topicWill", "ciaoo", Qos.QOS_2, true))
                 .build();
 
 
-        Client client = new Client(settings);
+        MQTTClient client = new MQTTClient(settings);
         try {
             System.out.println(client.connect());
         } catch (Exception e) {
@@ -40,6 +36,6 @@ public class Main {
 
         System.out.println("Disconnetion: " + client.disconnect());
 
-        System.in.read();
+        System.in.read();*/
     }
 }

@@ -1,17 +1,10 @@
 package it.petretiandrea;
 
-import it.petretiandrea.client.MQTTClient;
-import it.petretiandrea.core.ConnectionSettings;
-import it.petretiandrea.core.ConnectionSettingsBuilder;
-import it.petretiandrea.core.Message;
-import it.petretiandrea.core.Qos;
-import it.petretiandrea.server.MQTTServer;
-
 import java.io.IOException;
 
 public class MainServer {
     public static void main(String[] args) throws IOException {
-
+/*
         MQTTServer server = new MQTTServer();
 
         server.listen();
@@ -28,7 +21,7 @@ public class MainServer {
                 .build();
 
         System.out.println("Connecting...");
-        MQTTClient client = new MQTTClient(settings);
+        Test client = new Test(settings);
         try {
             System.out.println(client.connect());
             client.subscribe("topicbello", Qos.QOS_1);
@@ -40,6 +33,6 @@ public class MainServer {
         System.out.println("Disconnect");
         client.disconnect();
         System.in.read();
-        server.shutdownServer().join();
+        server.shutdownServer().join();*/
     }
 }

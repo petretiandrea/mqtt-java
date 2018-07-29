@@ -77,12 +77,12 @@ public class Connect extends MQTTPacket {
 
         mKeepAliveSeconds = Utils.getIntFromMSBLSB(packet[++offset], packet[++offset]);
 
-        // parse Client ID.
+        // parse MQTTClient ID.
         int clientIDLength = Utils.getIntFromMSBLSB(packet[++offset], packet[++offset]);
         mClientID = new String(packet, ++offset, clientIDLength, "UTF-8");
         offset += clientIDLength;
         if(clientIDLength > 23 || clientIDLength < 0 || mClientID.trim().isEmpty() /*|| !mClientID.matches(PATTERN_CLIENT_ID) */)
-            throw new MQTTParseException("Invalid Client ID", Reason.INVALID_CLIENT_ID);
+            throw new MQTTParseException("Invalid MQTTClient ID", Reason.INVALID_CLIENT_ID);
 
         // parse of Will Message
         if(willFlag) {
@@ -151,8 +151,8 @@ public class Connect extends MQTTPacket {
         bytes.add((byte)(getKeepAliveSeconds() >> 8));
         bytes.add((byte)(getKeepAliveSeconds() & 0xFF)); // mask for 8bit.
 
-        // payload Client Identifier, Will Topic, Will Message, User Name, Password
-        // 1. Client ID
+        // payload MQTTClient Identifier, Will Topic, Will Message, User Name, Password
+        // 1. MQTTClient ID
         AppendString(bytes, getClientID());
 
         // 2-3. Topic Will and Topic Message
