@@ -6,10 +6,10 @@ import it.petretiandrea.core.packet.Unsubscribe;
 
 public interface MQTTClientCallback {
 
-    void onMessageArrived(Message message);
-    void onDeliveryComplete(int messageId);
+    void onMessageArrived(Client client, Message message);
+    void onDeliveryComplete(Client client, int messageId);
     void onConnectionLost(Client client, Throwable ex);
     void onDisconnect(Client client);
-    void onSubscribeComplete(Subscribe subscribe);
-    void onUnsubscribeComplete(Unsubscribe unsubscribe);
+    void onSubscribeComplete(Client client, Subscribe subscribe);
+    void onUnsubscribeComplete(Client client, Unsubscribe unsubscribe);
 }

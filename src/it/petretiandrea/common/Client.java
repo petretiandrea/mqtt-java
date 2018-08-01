@@ -157,6 +157,13 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
         }
     }
 
+    public void startLoop() {
+        synchronized (mLock) {
+            mLooper = new Thread(this::loop);
+            mConnected = true;
+            mLooper.start();
+        }
+    }
     /**
      * Disconnect this client sending a disconnect packet.
      * @return A Future for disconnect task.
@@ -176,6 +183,7 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
                     } finally {
                         mTransport = null;
                         mLooper = null;
+                        mConnected = false;
                     }
                 }
                 return isConnected();
@@ -196,7 +204,7 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
                         // 3. packet received, dispatch it.
                         mTimeLastMessageArrived = System.currentTimeMillis();
                         mPacketDispatcher.dispatch(incoming);
-                    }
+                    } else throw new IOException("Socket Closed!");
                 } catch (SocketTimeoutException ignored) { } // ignored for because, is like to polling read from socket.
 
 
@@ -217,22 +225,18 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
      * Send all packet inside the pending queue. Auto move the packet, if send, to
      * the queue of session for "packet send but not acknowledged" if the qos is > qos 0
      */
-    private void sendPendingQueue() {
-        mPendingQueue.forEach(mqttPacket -> {
-            try {
-                mTransport.writePacket(mqttPacket);
-                // for packet send with qos > qos0, enqueue it because need to be acknowledged
-                if(mqttPacket.getQos().ordinal() > Qos.QOS_0.ordinal())
-                    getClientSession().getSendedNotAck().add(mqttPacket);
+    private void sendPendingQueue() throws IOException {
+        for(MQTTPacket packet : mPendingQueue) {
+            mTransport.writePacket(packet);
+            // for packet send with qos > qos0, enqueue it because need to be acknowledged
+            if(packet.getQos().ordinal() > Qos.QOS_0.ordinal())
+                getClientSession().getSendedNotAck().add(packet);
 
-                // after send remove from pending queue
-                synchronized (mPendingQueue) {
-                    mPendingQueue.remove(mqttPacket);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
+            // after send remove from pending queue
+            synchronized (mPendingQueue) {
+                mPendingQueue.remove(packet);
             }
-        });
+        }
     }
 
     /**
@@ -272,9 +276,9 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
     @Override
     public void onPublishReceive(Publish publish) {
         if(publish.getQos() == Qos.QOS_0) {
-            mClientCallback.onMessageArrived(publish.getMessage());
+            mClientCallback.onMessageArrived(this, publish.getMessage());
         } else if(publish.getQos() == Qos.QOS_1) {
-            mClientCallback.onMessageArrived(publish.getMessage());
+            mClientCallback.onMessageArrived(this, publish.getMessage());
             mPendingQueue.add(new PubAck(publish.getMessage().getMessageID()));
         } else if(publish.getQos() == Qos.QOS_2) {
             getClientSession().getReceivedNotAck().add(publish);
@@ -287,7 +291,7 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
         boolean removed = getClientSession().getSendedNotAck()
                 .removeIf(packet -> (packet instanceof Publish) && ((Publish)packet).getMessage().getMessageID() == pubAck.getMessageID());
         if(removed)
-            mClientCallback.onDeliveryComplete(pubAck.getMessageID());
+            mClientCallback.onDeliveryComplete(this, pubAck.getMessageID());
     }
 
     @Override
@@ -306,7 +310,7 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
                 .findFirst()
                 .ifPresent(packet -> {
                     mPendingQueue.add(new PubComp(pubRel.getMessageID()));
-                    mClientCallback.onMessageArrived(((Publish) packet).getMessage());
+                    mClientCallback.onMessageArrived(this, ((Publish) packet).getMessage());
                 });
     }
 
@@ -315,6 +319,6 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
         boolean removed = getClientSession().getReceivedNotAck()
                 .removeIf(packet -> (packet instanceof PubRec) && ((PubRec)packet).getMessageID() == pubComp.getMessageID());
         if(removed)
-            mClientCallback.onDeliveryComplete(pubComp.getMessageID());
+            mClientCallback.onDeliveryComplete(this, pubComp.getMessageID());
     }
 }

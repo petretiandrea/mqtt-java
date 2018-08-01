@@ -1,6 +1,7 @@
 package it.petretiandrea.core;
 
 import it.petretiandrea.core.Message;
+import it.petretiandrea.core.packet.Connect;
 
 public class ConnectionSettings {
 
@@ -12,6 +13,19 @@ public class ConnectionSettings {
     private boolean mCleanSession;
     private Message willMessage;
     private int mKeepAliveSeconds;
+
+    public static ConnectionSettings from(Connect connect) {
+        return new ConnectionSettings(
+                "",
+                0,
+                connect.getClientID(),
+                connect.getUsername(),
+                connect.getPassword(),
+                connect.isCleanSession(),
+                connect.getWillMessage(),
+                connect.getKeepAliveSeconds()
+        );
+    }
 
     public ConnectionSettings(String hostname, int port, String clientId, String username, String password, boolean cleanSession, Message willMessage, int keepAliveSeconds) {
         mHostname = hostname;

@@ -2,6 +2,7 @@ package it.petretiandrea.common;
 
 import it.petretiandrea.common.session.BrokerSession;
 import it.petretiandrea.common.session.ClientSession;
+import it.petretiandrea.common.session.Session;
 import it.petretiandrea.core.packet.Subscribe;
 
 import java.util.Collection;
@@ -70,5 +71,16 @@ public class SessionManager {
         }
     }
 
+    /**
+     * Remove a session with clean session set to true
+     * @param clientID
+     */
+    public void cleanSession(String clientID) {
+        synchronized (mSessions) {
+            Session s = mSessions.getOrDefault(clientID, null);
+            if(s != null && s.isCleanSession())
+                mSessions.remove(s.getClientID());
+        }
+    }
 
 }

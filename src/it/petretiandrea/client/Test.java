@@ -1,7 +1,6 @@
 package it.petretiandrea.client;
 
 import it.petretiandrea.common.Client;
-import it.petretiandrea.common.MQTTClient;
 import it.petretiandrea.common.MQTTClientCallback;
 import it.petretiandrea.core.ConnectionSettings;
 import it.petretiandrea.core.ConnectionSettingsBuilder;
@@ -11,8 +10,8 @@ import it.petretiandrea.core.exception.MQTTParseException;
 import it.petretiandrea.core.exception.MQTTProtocolException;
 import it.petretiandrea.core.packet.Subscribe;
 import it.petretiandrea.core.packet.Unsubscribe;
+import it.petretiandrea.server.Broker;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.InetAddress;
 
@@ -21,9 +20,10 @@ public class Test implements MQTTClientCallback {
 
     public static void main(String[] args) throws MQTTProtocolException, MQTTParseException, IOException {
 
+
         ConnectionSettings settings = new ConnectionSettingsBuilder()
                 .setClientId(InetAddress.getLocalHost().getHostName()) // default is the hostname
-                .setHostname("192.168.1.105")
+                .setHostname("localhost")
                 .setPort(1883)
                 .setCleanSession(true)
                 .setKeepAliveSeconds(10)
@@ -61,13 +61,13 @@ public class Test implements MQTTClientCallback {
     }
 
     @Override
-    public void onMessageArrived(Message message) {
+    public void onMessageArrived(Client client, Message message) {
         System.out.println("Test.onMessageArrived");
         System.out.println("message = [" + message + "]");
     }
 
     @Override
-    public void onDeliveryComplete(int messageId) {
+    public void onDeliveryComplete(Client client, int messageId) {
         System.out.println("Test.onDeliveryComplete");
         System.out.println("messageId = [" + messageId + "]");
     }
@@ -85,13 +85,13 @@ public class Test implements MQTTClientCallback {
     }
 
     @Override
-    public void onSubscribeComplete(Subscribe subscribe) {
+    public void onSubscribeComplete(Client client, Subscribe subscribe) {
         System.out.println("Test.onSubscribeComplete");
         System.out.println("subscribe = [" + subscribe + "]");
     }
 
     @Override
-    public void onUnsubscribeComplete(Unsubscribe unsubscribe) {
+    public void onUnsubscribeComplete(Client client, Unsubscribe unsubscribe) {
         System.out.println("Test.onUnsubscribeComplete");
         System.out.println("unsubscribe = [" + unsubscribe + "]");
     }
