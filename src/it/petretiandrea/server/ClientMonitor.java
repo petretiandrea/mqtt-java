@@ -133,7 +133,7 @@ public class ClientMonitor {
      */
     private void checkClientAlive() throws MQTTProtocolException {
         long now = System.currentTimeMillis();
-        if(now - mLastPacketReceived > mPingTimeout) {
+            if(now - mLastPacketReceived > mPingTimeout) {
             // client is not alive.
             throw new MQTTProtocolException("MQTTClient timeout expired!");
         }

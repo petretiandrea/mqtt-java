@@ -61,7 +61,10 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
 
     private final Object mLock = new Object();
 
-    public Client(ConnectionSettings connectionSettings, ClientSession clientSession, Transport transport, List<MQTTPacket> pendingQueue) {
+    private long mTimeLastMessageArrived;
+
+    public Client(ConnectionSettings connectionSettings, ClientSession clientSession,
+                  Transport transport, List<MQTTPacket> pendingQueue) {
         mTransport = transport;
         mClientSession = clientSession;
         mPendingQueue = new QueueMQTT<>();
@@ -69,9 +72,13 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
         mConnectionSettings = connectionSettings;
         mConnected = false;
         mPacketDispatcher = new PacketDispatcher(this);
+        mTimeLastMessageArrived = System.currentTimeMillis();
     }
 
-    /*public Client(ConnectionSettings connectionSettings, BrokerSession brokerSession, Transport transport) {
+    public long getTimeLastMessageArrived() {
+        return mTimeLastMessageArrived;
+    }
+/*public Client(ConnectionSettings connectionSettings, BrokerSession brokerSession, Transport transport) {
         mTransport = transport;
 
         mClientSession = new ClientSession(brokerSession.getClientID(), brokerSession.isCleanSession());
@@ -126,6 +133,10 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
         return mConnected;
     }
 
+    protected ConnectionSettings getConnectionSettings() {
+        return mConnectionSettings;
+    }
+
     public ClientSession getClientSession() {
         synchronized (mClientSession) {
             return mClientSession;
@@ -138,6 +149,12 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
 
     public void setClientCallback(MQTTClientCallback clientCallback) {
         mClientCallback = clientCallback;
+    }
+
+    public void send(MQTTPacket packet) {
+        synchronized (mPendingQueue) {
+            mPendingQueue.add(packet);
+        }
     }
 
     /**
@@ -177,9 +194,17 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
                     MQTTPacket incoming = mTransport.readPacket(SOCKET_IO_TIMEOUT);
                     if(incoming != null) {
                         // 3. packet received, dispatch it.
+                        mTimeLastMessageArrived = System.currentTimeMillis();
                         mPacketDispatcher.dispatch(incoming);
                     }
                 } catch (SocketTimeoutException ignored) { } // ignored for because, is like to polling read from socket.
+
+
+                long now = System.currentTimeMillis();
+                if(now - mTimeLastMessageArrived > getKeepAliveTimeout()) {
+                    // keep alive ends
+                    onKeepAliveTimeout();
+                }
             }
         } catch (IOException | MQTTProtocolException | MQTTParseException ex) {
             ex.printStackTrace();
@@ -240,6 +265,9 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
             mPendingQueue.add(new Unsubscribe(topic));
         }
     }
+
+    protected abstract void onKeepAliveTimeout() throws MQTTProtocolException;
+    protected abstract long getKeepAliveTimeout();
 
     @Override
     public void onPublishReceive(Publish publish) {

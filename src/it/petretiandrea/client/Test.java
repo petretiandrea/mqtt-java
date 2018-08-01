@@ -26,7 +26,7 @@ public class Test implements MQTTClientCallback {
                 .setHostname("192.168.1.105")
                 .setPort(1883)
                 .setCleanSession(true)
-                .setKeepAliveSeconds(200)
+                .setKeepAliveSeconds(10)
                 .build();
 
         MQTTClient mqttClient = new MQTTClient(settings);

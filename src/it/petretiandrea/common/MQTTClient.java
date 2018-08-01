@@ -1,27 +1,32 @@
 package it.petretiandrea.common;
 
-import it.petretiandrea.common.network.Transport;
-import it.petretiandrea.common.network.TransportTCP;
-import it.petretiandrea.common.session.ClientSession;
-import it.petretiandrea.core.ConnectionSettings;
-import it.petretiandrea.core.exception.MQTTProtocolException;
-import it.petretiandrea.core.packet.*;
-import it.petretiandrea.core.packet.base.MQTTPacket;
+        import it.petretiandrea.common.network.Transport;
+        import it.petretiandrea.common.network.TransportTCP;
+        import it.petretiandrea.common.session.ClientSession;
+        import it.petretiandrea.core.ConnectionSettings;
+        import it.petretiandrea.core.exception.MQTTProtocolException;
+        import it.petretiandrea.core.packet.*;
+        import it.petretiandrea.core.packet.base.MQTTPacket;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
+        import java.io.IOException;
+        import java.util.Collection;
+        import java.util.Collections;
+        import java.util.List;
+        import java.util.function.Consumer;
+        import java.util.function.Predicate;
 
 public class MQTTClient extends Client {
+
+    private long mKeepAliveTimeout;
+    private long mTimePingResp;
 
     public MQTTClient(ConnectionSettings connectionSettings) throws IOException {
         super(connectionSettings,
                 new ClientSession(connectionSettings.getClientId(), connectionSettings.isCleanSession()),
                 new TransportTCP(),
                 Collections.emptyList());
+        mTimePingResp = -1;
+        mKeepAliveTimeout = (getConnectionSettings().getKeepAliveSeconds() - (getKeepAliveTimeout() / 2)) * 1000;
     }
 
     @Override
@@ -74,11 +79,27 @@ public class MQTTClient extends Client {
 
     @Override
     public void onPingRespReceive(PingResp pingResp) {
-
+        mTimePingResp = -1;
     }
 
     @Override
     public void onDisconnect(Disconnect disconnect) throws MQTTProtocolException {
         throw new MQTTProtocolException("Client could not receive a Disconnect Message!");
+    }
+
+    @Override
+    protected void onKeepAliveTimeout() throws MQTTProtocolException {
+        if(mTimePingResp == -1) {
+            System.out.println("MQTTClient.onKeepAliveTimeout");
+            send(new PingReq());
+            mTimePingResp = System.currentTimeMillis();
+        } else if(System.currentTimeMillis() - mTimePingResp >= mKeepAliveTimeout) {
+            throw new MQTTProtocolException("No Ping response received!");
+        }
+    }
+
+    @Override
+    protected long getKeepAliveTimeout() {
+        return mKeepAliveTimeout;
     }
 }
