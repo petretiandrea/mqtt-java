@@ -3,7 +3,7 @@ package it.petretiandrea.client;
 import it.petretiandrea.common.MQTTClientCallback;
 import it.petretiandrea.common.PacketDispatcher;
 import it.petretiandrea.common.QueueMQTT;
-import it.petretiandrea.common.Session;
+import it.petretiandrea.common.session.Session;
 import it.petretiandrea.common.network.Transport;
 import it.petretiandrea.common.network.TransportTCP;
 import it.petretiandrea.core.*;
@@ -39,6 +39,8 @@ public class MQTTClient {
     private long mPingRespTimeout;
 
     private MQTTClientCallback mClientCallback;
+
+
 
     public MQTTClient(ConnectionSettings connectionSettings, MQTTClientCallback clientCallback) {
         mConnectionSettings = connectionSettings;

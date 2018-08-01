@@ -1,5 +1,6 @@
 package it.petretiandrea.server;
 
+import it.petretiandrea.common.SessionManager;
 import it.petretiandrea.common.network.Transport;
 import it.petretiandrea.common.network.TransportTCP;
 import it.petretiandrea.core.ConnectionStatus;
@@ -15,7 +16,6 @@ import it.petretiandrea.server.security.AccountManager;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.concurrent.*;
-import java.util.function.BiConsumer;
 
 public class MQTTServer {
 

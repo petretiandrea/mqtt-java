@@ -5,8 +5,8 @@ import it.petretiandrea.core.packet.Subscribe;
 
 public interface MQTTClientCallback {
 
-    void onConnectionLost(Throwable throwable);
     void onMessageArrived(Message message);
     void onDeliveryComplete(int messageId);
-    void onSubscribe(Subscribe subscribe);
+    void onConnectionLost(Client client, Throwable ex);
+    void onDisconnect(Client client);
 }

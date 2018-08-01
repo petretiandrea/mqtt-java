@@ -1,7 +1,7 @@
 package it.petretiandrea.server;
 
 import it.petretiandrea.common.QueueMQTT;
-import it.petretiandrea.common.Session;
+import it.petretiandrea.common.session.Session;
 import it.petretiandrea.core.Message;
 import it.petretiandrea.core.packet.Publish;
 import it.petretiandrea.core.packet.Subscribe;
