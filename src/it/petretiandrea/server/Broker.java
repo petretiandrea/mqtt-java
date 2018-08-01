@@ -11,6 +11,7 @@ import it.petretiandrea.core.Message;
 import it.petretiandrea.core.exception.MQTTParseException;
 import it.petretiandrea.core.packet.Connect;
 import it.petretiandrea.core.packet.Subscribe;
+import it.petretiandrea.core.packet.Unsubscribe;
 import it.petretiandrea.core.packet.base.MQTTPacket;
 import it.petretiandrea.server.security.AccountManager;
 
@@ -137,11 +138,7 @@ public class Broker implements MQTTClientCallback {
     }
 
 
-    /* Single client Callbacks */
-    @Override
-    public void onConnectionLost(Throwable throwable) {
-
-    }
+        /* Single client Callbacks */
 
     @Override
     public void onMessageArrived(Message message) {
@@ -154,7 +151,23 @@ public class Broker implements MQTTClientCallback {
     }
 
     @Override
-    public void onSubscribe(Subscribe subscribe) {
+    public void onConnectionLost(Client client, Throwable ex) {
 
     }
+
+    @Override
+    public void onDisconnect(Client client) {
+
+    }
+
+    @Override
+    public void onSubscribeComplete(Subscribe subscribe) {
+
+    }
+
+    @Override
+    public void onUnsubscribeComplete(Unsubscribe unsubscribe) {
+
+    }
+
 }

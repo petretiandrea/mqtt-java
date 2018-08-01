@@ -17,4 +17,6 @@ public interface Transport {
     void writePacket(MQTTPacket packet) throws IOException;
 
     void close() throws IOException;
+
+    boolean isConnected();
 }

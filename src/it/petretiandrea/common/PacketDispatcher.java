@@ -7,20 +7,20 @@ import it.petretiandrea.core.packet.base.MQTTPacket;
 public class PacketDispatcher {
 
     public interface IPacketReceiver {
-        void onConnectReceive(Connect connect);
+        void onConnectReceive(Connect connect) throws MQTTProtocolException;
         void onConnAckReceive(ConnAck connAck);
         void onPublishReceive(Publish publish);
         void onPubAckReceive(PubAck pubAck);
         void onPubRecReceive(PubRec pubRec);
         void onPubRelReceive(PubRel pubRel);
         void onPubCompReceive(PubComp pubComp);
-        void onSubscribeReceive(Subscribe subscribe);
+        void onSubscribeReceive(Subscribe subscribe) throws MQTTProtocolException;
         void onSubAckReceive(SubAck subAck);
-        void onUnsubscribeReceive(Unsubscribe unsubscribe);
+        void onUnsubscribeReceive(Unsubscribe unsubscribe) throws MQTTProtocolException;
         void onUnsubAckReceive(UnsubAck unsubAck);
         void onPingReqReceive(PingReq pingReq);
         void onPingRespReceive(PingResp pingResp);
-        void onDisconnect(Disconnect disconnect);
+        void onDisconnect(Disconnect disconnect) throws MQTTProtocolException;
     }
 
     private IPacketReceiver mPacketReceiver;

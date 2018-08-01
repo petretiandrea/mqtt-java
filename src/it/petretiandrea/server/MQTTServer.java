@@ -61,7 +61,7 @@ public class MQTTServer {
                     /* Remove the client from the list */
                     mClientsConnected.remove(clientMonitor.getSession().getClientID());
                     /* Clean session if the flag clean session is true */
-                    mSessionManager.cleanSession(clientMonitor.getSession().getClientID());
+                   // mSessionManager.cleanSession(clientMonitor.getSession().getClientID());
                 }
             }
 
@@ -76,12 +76,12 @@ public class MQTTServer {
             @Override
             public void onPublishMessageReceived(Message message) {
                 // publish message to other clients.
-                mSessionManager.getSessionList().forEach(session -> session.getSubscriptions().stream()
+                /*mSessionManager.getSessionList().forEach(session -> session.getSubscriptions().stream()
                         .filter(sub -> sub.getTopic().equals(message.getTopic()))
                         .forEach((sub) -> {
                             message.setQos(Qos.min(sub.getQosSub(), message.getQos()));
                             session.addPendingPublish(message);
-                        }));
+                        }));*/
 
                 // retain message, need to be added to retains message
                 if(message.isRetain()) {
@@ -139,13 +139,13 @@ public class MQTTServer {
                             boolean isPresent = false;
                             if(connect.isCleanSession()) {
                                 // remove any old permanent session
-                                mSessionManager.cleanSession(connect.getClientID());
-                                session = mSessionManager.createNewSession(connect.getClientID(), true);
+                           //     mSessionManager.cleanSession(connect.getClientID());
+                            //    session = mSessionManager.createNewSession(connect.getClientID(), true);
                             } else {
-                                session = mSessionManager.searchSession(connect.getClientID());
+                              //  session = mSessionManager.searchSession(connect.getClientID());
                                 isPresent = (session != null);
-                                if(!isPresent)
-                                    session = mSessionManager.createNewSession(connect.getClientID(), false);
+                             //   if(!isPresent)
+                               //     session = mSessionManager.createNewSession(connect.getClientID(), false);
                             }
                             // 6. Send ack with zero code (all is ok), to MQTTClient.
                             transport.writePacket(new ConnAck(isPresent, ConnectionStatus.ACCEPT));

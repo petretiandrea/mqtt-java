@@ -1,17 +1,17 @@
 package it.petretiandrea.common;
 
 import it.petretiandrea.common.network.Transport;
+import it.petretiandrea.common.network.TransportTCP;
 import it.petretiandrea.common.session.BrokerSession;
 import it.petretiandrea.common.session.ClientSession;
-import it.petretiandrea.core.ConnectionSettings;
-import it.petretiandrea.core.Message;
-import it.petretiandrea.core.Qos;
+import it.petretiandrea.core.*;
 import it.petretiandrea.core.exception.MQTTParseException;
 import it.petretiandrea.core.exception.MQTTProtocolException;
 import it.petretiandrea.core.packet.*;
 import it.petretiandrea.core.packet.base.MQTTPacket;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.util.Collections;
 import java.util.List;
@@ -59,27 +59,19 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
 
     private MQTTClientCallback mClientCallback;
 
-    public Client(ConnectionSettings connectionSettings, ClientSession clientSession) {
-        this(connectionSettings, clientSession, Collections.emptyList());
-    }
+    private final Object mLock = new Object();
 
-    /**
-     * Create a new Client with specific connection settings, client session and a list of old pending packet. Is
-     * used by the broker for restore the pending packet.
-     * @param connectionSettings Settings of connection.
-     * @param clientSession Client session
-     * @param pendingPacket Packet not send, because Client is Offline. Used by broker for restore pending packet.
-     */
-    public Client(ConnectionSettings connectionSettings, ClientSession clientSession, List<MQTTPacket> pendingPacket) {
-        mConnectionSettings = connectionSettings;
+    public Client(ConnectionSettings connectionSettings, ClientSession clientSession, Transport transport, List<MQTTPacket> pendingQueue) {
+        mTransport = transport;
         mClientSession = clientSession;
-        mConnected = false;
         mPendingQueue = new QueueMQTT<>();
-        mPendingQueue.addAll(pendingPacket);
+        mPendingQueue.addAll(pendingQueue);
+        mConnectionSettings = connectionSettings;
+        mConnected = false;
         mPacketDispatcher = new PacketDispatcher(this);
     }
 
-    public Client(ConnectionSettings connectionSettings, BrokerSession brokerSession, Transport transport) {
+    /*public Client(ConnectionSettings connectionSettings, BrokerSession brokerSession, Transport transport) {
         mTransport = transport;
 
         mClientSession = new ClientSession(brokerSession.getClientID(), brokerSession.isCleanSession());
@@ -92,14 +84,38 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
 
         mConnected = false;
         mPacketDispatcher = new PacketDispatcher(this);
-    }
+    }*/
 
     /**
      * Connect Client to Broker.
      * @return True if connected or already connected, False otherwise.
      */
-    public boolean connect() {
-        return false;
+    public boolean connect() throws MQTTProtocolException {
+        synchronized (mLock) {
+            if(!mConnected && !mTransport.isConnected()) {
+                // need to be connected!
+                try {
+                    MQTTPacket incomePacket;
+                    mTransport.connect(new InetSocketAddress(mConnectionSettings.getHostname(), mConnectionSettings.getPort()));
+                    mTransport.writePacket(new Connect(MQTTVersion.MQTT_311, mConnectionSettings));
+                    // TODO: Add timeout
+                    if((incomePacket = mTransport.readPacket()) != null) {
+                        if(incomePacket.getCommand().equals(MQTTPacket.Type.CONNACK)) {
+                            if(((ConnAck)incomePacket).getConnectionStatus() == ConnectionStatus.ACCEPT) {
+                                mLooper = new Thread(this::loop);
+                                mConnected = true;
+                                mLooper.start();
+                                return true;
+                            } else throw new MQTTProtocolException(((ConnAck)incomePacket).getConnectionStatus().toString());
+                        }
+                    }
+                } catch (IOException | MQTTParseException e) {
+                    e.printStackTrace();
+                }
+            } else return true; // already connected
+
+            return false;
+        }
     }
 
     /**
@@ -130,21 +146,23 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
      */
     public CompletableFuture<Boolean> disconnect() {
         return CompletableFuture.supplyAsync(() -> {
-            if(isConnected()) {
-                try {
-                    mTransport.writePacket(new Disconnect());
-                    mTransport.close();
-                    mConnected = false;
-                    mLooper.interrupt();
-                    mLooper.join();
-                } catch (IOException | InterruptedException e) {
-                    e.printStackTrace();
-                } finally {
-                    mTransport = null;
-                    mLooper = null;
+            synchronized (mLock) {
+                if (isConnected()) {
+                    try {
+                        mTransport.writePacket(new Disconnect());
+                        mTransport.close();
+                        mConnected = false;
+                        mLooper.interrupt();
+                        mLooper.join();
+                    } catch (IOException | InterruptedException e) {
+                        e.printStackTrace();
+                    } finally {
+                        mTransport = null;
+                        mLooper = null;
+                    }
                 }
+                return isConnected();
             }
-            return isConnected();
         });
     }
 
@@ -192,26 +210,35 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
         });
     }
 
+    /**
+     * Publish a message
+     * @param message Message to be published.
+     */
     public void publish(Message message) {
         synchronized (mPendingQueue) {
             mPendingQueue.add(new Publish(message));
         }
     }
 
+    /**
+     * Subscribe to specific topic with Qos.
+     * @param topic Topic to be subscribed
+     * @param qos Qos of subscription.
+     */
     public void subscribe(String topic, Qos qos) {
         synchronized (mPendingQueue) {
             mPendingQueue.add(new Subscribe(topic, qos));
         }
     }
 
-    @Override
-    public void onConnectReceive(Connect connect) {
-
-    }
-
-    @Override
-    public void onConnAckReceive(ConnAck connAck) {
-
+    /**
+     * Unsubscribe from specific Topic.
+     * @param topic Topic
+     */
+    public void unsubscribe(String topic) {
+        synchronized (mPendingQueue) {
+            mPendingQueue.add(new Unsubscribe(topic));
+        }
     }
 
     @Override

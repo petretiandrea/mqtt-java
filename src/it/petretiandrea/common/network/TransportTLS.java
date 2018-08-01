@@ -38,4 +38,9 @@ public class TransportTLS implements Transport {
     public void close() throws IOException {
 
     }
+
+    @Override
+    public boolean isConnected() {
+        return false;
+    }
 }

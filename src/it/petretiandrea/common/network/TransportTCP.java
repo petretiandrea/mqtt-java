@@ -99,6 +99,13 @@ public class TransportTCP implements Transport {
         }
     }
 
+    @Override
+    public boolean isConnected() {
+        if(mSocket != null)
+            return mSocket.isConnected();
+        return false;
+    }
+
 
     /**
      * Write on socket. It's thread safe.

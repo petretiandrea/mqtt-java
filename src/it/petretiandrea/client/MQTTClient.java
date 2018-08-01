@@ -173,7 +173,7 @@ public class MQTTClient {
             }
         } catch (IOException | MQTTProtocolException | MQTTParseException ex) {
             ex.printStackTrace();
-            mClientCallback.onConnectionLost(ex);
+          //  mClientCallback.onConnectionLost(ex);
         } finally {
             disconnect();
         }
