@@ -81,7 +81,7 @@ public class Connect extends MQTTPacket {
         int clientIDLength = Utils.getIntFromMSBLSB(packet[++offset], packet[++offset]);
         mClientID = new String(packet, ++offset, clientIDLength, "UTF-8");
         offset += clientIDLength;
-        if(clientIDLength > 23 || clientIDLength < 0 || mClientID.trim().isEmpty() /*|| !mClientID.matches(PATTERN_CLIENT_ID) */)
+        if(clientIDLength > 23 || clientIDLength < 0 || mClientID.trim().isEmpty() /*|| !mClientID.matches(PATTERN_CLIENT_ID)*/)
             throw new MQTTParseException("Invalid MQTTClient ID", Reason.INVALID_CLIENT_ID);
 
         // parse of Will Message
@@ -103,7 +103,7 @@ public class Connect extends MQTTPacket {
         }
 
         if(usernameFlag) {
-            int usernameLength = Utils.getIntFromMSBLSB(packet[offset++], packet[offset]++);
+            int usernameLength = Utils.getIntFromMSBLSB(packet[offset++], packet[offset++]);
             String username = new String(packet, offset, usernameLength, "UTF-8");
             offset += usernameLength;
             mUsername = username;

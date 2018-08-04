@@ -1,10 +1,7 @@
 package it.petretiandrea.server;
 
 import it.petretiandrea.client.MQTTClient;
-import it.petretiandrea.common.Client;
-import it.petretiandrea.common.MQTTClientCallback;
-import it.petretiandrea.common.SessionManager;
-import it.petretiandrea.common.SubscribeManager;
+import it.petretiandrea.common.*;
 import it.petretiandrea.common.network.Transport;
 import it.petretiandrea.common.network.TransportTCP;
 import it.petretiandrea.common.session.BrokerSession;
@@ -66,7 +63,11 @@ public class Broker implements MQTTClientCallback {
     private volatile boolean mRunning;
 
     public Broker() {
-        mAccountManager = AccountManager.getInstance();
+        this(new AccountManager());
+    }
+
+    public Broker(AccountManager accountManager) {
+        mAccountManager = accountManager;
         mSessionManager = new SessionManager();
         mSubscribeManager = new SubscribeManager();
         mClients = new HashMap<>();
@@ -210,7 +211,7 @@ public class Broker implements MQTTClientCallback {
         mClients.values().stream()
                 .filter(Client::isConnected)
                 .forEach(clientBroker -> mSubscribeManager.getSubscriptions(clientBroker.getClientSession().getClientID()).stream()
-                        .filter(subscribe -> subscribe.getTopic().equals(message.getTopic()))
+                        .filter(subscribe -> TopicMatcher.matchTopic(subscribe.getTopic(), message.getTopic()))
                         .forEach(subscribe -> {
                             message.setQos(Qos.min(subscribe.getQosSub(), receivedQos));
                             clientBroker.publish(message);
@@ -220,7 +221,7 @@ public class Broker implements MQTTClientCallback {
         // 2. recover session from session manager, and put here the publish message
         mSessionManager.getSessions().forEach(brokerSession ->
                 brokerSession.getSubscriptions().stream()
-                    .filter(subscribe -> subscribe.getTopic().equals(message.getTopic()))
+                    .filter(subscribe -> TopicMatcher.matchTopic(subscribe.getTopic(), message.getTopic()))
                     .forEach(subscribe -> {
                         message.setQos(Qos.min(subscribe.getQosSub(), receivedQos));
                         brokerSession.getPendingPublish().add(new Publish(message));
@@ -262,6 +263,13 @@ public class Broker implements MQTTClientCallback {
             else /* Save Sessions */
                 mSessionManager.addSession(client.getClientSession(), mSubscribeManager.getSubscriptions(client.getClientSession().getClientID()));
 
+            // remove all subscriptions
+            mSubscribeManager.unsubscribeAll(client.getClientSession().getClientID());
+
+            // send if present the will message to other clients
+            // uso on messageArrived che gestisce automanticamente gi il rendirizzamento nella sessione e il retain
+            if(client.getWillMessage() != null)
+                onMessageArrived(client, client.getWillMessage());
         }
     }
 
@@ -270,7 +278,7 @@ public class Broker implements MQTTClientCallback {
         System.out.println("Broker.onSubscribeComplete");
         mSubscribeManager.subscribe(client.getClientSession().getClientID(), subscribe);
         mRetainMessages.stream()
-                .filter(message -> message.getTopic().equals(subscribe.getTopic()))
+                .filter(message -> TopicMatcher.matchTopic(subscribe.getTopic(), message.getTopic()))
                 .forEach(client::publish);
     }
 

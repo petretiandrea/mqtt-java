@@ -1,5 +1,6 @@
 package it.petretiandrea.core.packet;
 
+import it.petretiandrea.common.TopicMatcher;
 import it.petretiandrea.core.Qos;
 import it.petretiandrea.utils.MessageIDGenerator;
 import it.petretiandrea.utils.Utils;
@@ -9,7 +10,6 @@ import it.petretiandrea.core.exception.MQTTParseException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 import static it.petretiandrea.utils.Utils.*;
 

@@ -11,6 +11,7 @@ public class Utils {
 
     public static final String CHARSET = "UTF-8";
 
+
     public static MQTTPacket.Type getType(byte header) throws MQTTParseException { return MQTTPacket.Type.fromInteger((header & 0xF0) >> 4); }
 
     public static int getRemainingLength(byte[] packet) throws MQTTParseException {

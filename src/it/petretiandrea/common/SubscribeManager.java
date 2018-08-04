@@ -34,6 +34,11 @@ public class SubscribeManager {
         }
     }
 
+    public void unsubscribeAll(String clientID) {
+        synchronized (mSubscribes) {
+            mSubscribes.remove(clientID);
+        }
+    }
     public List<Subscribe> getSubscriptions(String clientID) {
         synchronized (mSubscribes) {
             return mSubscribes.getOrDefault(clientID, Collections.emptyList());

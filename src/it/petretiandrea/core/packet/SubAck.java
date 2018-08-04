@@ -12,11 +12,20 @@ public class SubAck extends MQTTPacket {
 
     private int mMessageID;
     private Qos mGrantedQos;
+    private boolean mIsFailure;
 
     public SubAck(int messageID, Qos grantedQos) {
         super(MQTTPacket.Type.SUBACK, false, Qos.QOS_0, false);
         mMessageID = messageID;
         mGrantedQos = grantedQos;
+        mIsFailure = false;
+    }
+
+    public SubAck(int messageID, Qos grantedQos, boolean isFailure) {
+        super(MQTTPacket.Type.SUBACK, false, Qos.QOS_0, false);
+        mMessageID = messageID;
+        mGrantedQos = grantedQos;
+        mIsFailure = isFailure;
     }
 
     public SubAck(byte fixedHedaer, byte[] body) throws MQTTParseException {
@@ -26,7 +35,8 @@ public class SubAck extends MQTTPacket {
         int grantedQos = (body[offset] & 0xFF);
         if(grantedQos != 0x80)
             mGrantedQos = Qos.fromInteger(grantedQos);
-        else throw new MQTTParseException("Granted Qos Failure", MQTTParseException.Reason.INVALID_QOS);
+        else
+            mIsFailure = true;
     }
 
     @Override
@@ -34,7 +44,7 @@ public class SubAck extends MQTTPacket {
         byte[] variableAndPayload = new byte[3];
         variableAndPayload[0] = ((byte) (getMessageID() >> 8));
         variableAndPayload[1] = ((byte) (getMessageID() & 0xFF));
-        variableAndPayload[2] = ((byte) ((getGrantedQos() == Qos.QOS_0) ? 0x00 : (getGrantedQos() == Qos.QOS_1) ? 0x01 : 0x02));
+        variableAndPayload[2] = ((byte) (isFailure() ? 0x80 : (getGrantedQos() == Qos.QOS_0) ? 0x00 : (getGrantedQos() == Qos.QOS_1) ? 0x01 : 0x02));
         return Join(
                 GenerateFixedHeader(getCommand(), 3, isDup(), getQos().ordinal(), isRetain()),
                 variableAndPayload
@@ -47,6 +57,10 @@ public class SubAck extends MQTTPacket {
 
     public Qos getGrantedQos() {
         return mGrantedQos;
+    }
+
+    public boolean isFailure() {
+        return mIsFailure;
     }
 
     @Override

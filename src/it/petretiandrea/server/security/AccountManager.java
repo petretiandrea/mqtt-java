@@ -9,18 +9,16 @@ public class AccountManager {
 
     private static AccountManager mInstance;
 
-    public static AccountManager getInstance() {
-        if(mInstance == null)
-            mInstance = new AccountManager();
-        return mInstance;
-    }
-
-    private AccountManager() {
+    public AccountManager() {
         mMap = new HashMap<>();
     }
 
     public boolean existUsername(String username) {
         return mMap.containsKey(username);
+    }
+
+    public void addUser(String username, String password) {
+        mMap.putIfAbsent(username, password);
     }
 
     public boolean grantAccess(String username, String password) {

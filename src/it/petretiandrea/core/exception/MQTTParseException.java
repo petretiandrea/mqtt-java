@@ -9,7 +9,8 @@ public class MQTTParseException extends Exception {
         NO_PASSWORD,
         INVALID_CLIENT_ID,
         INVALID_QOS,
-        INVALID_MQTT_PACKET
+        INVALID_MQTT_PACKET,
+        INVALID_TOPIC
     }
 
     private Reason mReason;

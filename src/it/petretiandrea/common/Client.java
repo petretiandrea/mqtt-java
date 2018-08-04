@@ -1,8 +1,6 @@
 package it.petretiandrea.common;
 
 import it.petretiandrea.common.network.Transport;
-import it.petretiandrea.common.network.TransportTCP;
-import it.petretiandrea.common.session.BrokerSession;
 import it.petretiandrea.common.session.ClientSession;
 import it.petretiandrea.core.*;
 import it.petretiandrea.core.exception.MQTTParseException;
@@ -13,11 +11,8 @@ import it.petretiandrea.core.packet.base.MQTTPacket;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 public abstract class Client implements PacketDispatcher.IPacketReceiver {
 
@@ -63,6 +58,8 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
 
     private long mTimeLastMessageArrived;
 
+    private Message mWillMessage;
+
     public Client(ConnectionSettings connectionSettings, ClientSession clientSession,
                   Transport transport, List<MQTTPacket> pendingQueue) {
         mTransport = transport;
@@ -73,25 +70,16 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
         mConnected = false;
         mPacketDispatcher = new PacketDispatcher(this);
         mTimeLastMessageArrived = System.currentTimeMillis();
+        mWillMessage = connectionSettings.getWillMessage();
     }
 
     public long getTimeLastMessageArrived() {
         return mTimeLastMessageArrived;
     }
-/*public Client(ConnectionSettings connectionSettings, BrokerSession brokerSession, Transport transport) {
-        mTransport = transport;
 
-        mClientSession = new ClientSession(brokerSession.getClientID(), brokerSession.isCleanSession());
-        mClientSession.getSendedNotAck().addAll(brokerSession.getSendedNotAck());
-        mClientSession.getReceivedNotAck().addAll(brokerSession.getReceivedNotAck());
-
-        mConnectionSettings = connectionSettings;
-        mPendingQueue = new QueueMQTT<>();
-        mPendingQueue.addAll(brokerSession.getPendingPublish());
-
-        mConnected = false;
-        mPacketDispatcher = new PacketDispatcher(this);
-    }*/
+    public Message getWillMessage() {
+        return mWillMessage;
+    }
 
     /**
      * Connect Client to Broker.
@@ -242,22 +230,32 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
     /**
      * Publish a message
      * @param message Message to be published.
+     * @return True if publish topic is valid, False otherwise.
      */
-    public void publish(Message message) {
+    public boolean publish(Message message) {
         synchronized (mPendingQueue) {
-            mPendingQueue.add(new Publish(message));
+            if(TopicMatcher.isValidTopicPublish(message.getTopic())) {
+                mPendingQueue.add(new Publish(message));
+                return true;
+            }
         }
+        return false;
     }
 
     /**
      * Subscribe to specific topic with Qos.
      * @param topic Topic to be subscribed
      * @param qos Qos of subscription.
+     * @return True if subscribe topic is valid. False otherwise.
      */
-    public void subscribe(String topic, Qos qos) {
+    public boolean subscribe(String topic, Qos qos) {
         synchronized (mPendingQueue) {
-            mPendingQueue.add(new Subscribe(topic, qos));
+            if(TopicMatcher.isValidSubscribeTopic(topic)) {
+                mPendingQueue.add(new Subscribe(topic, qos));
+                return true;
+            }
         }
+        return false;
     }
 
     /**

@@ -1,10 +1,12 @@
 package it.petretiandrea.server;
 
 import it.petretiandrea.common.Client;
+import it.petretiandrea.common.TopicMatcher;
 import it.petretiandrea.common.network.Transport;
 import it.petretiandrea.common.session.BrokerSession;
 import it.petretiandrea.common.session.ClientSession;
 import it.petretiandrea.core.ConnectionSettings;
+import it.petretiandrea.core.Message;
 import it.petretiandrea.core.exception.MQTTProtocolException;
 import it.petretiandrea.core.packet.*;
 import it.petretiandrea.core.packet.base.MQTTPacket;
@@ -19,7 +21,8 @@ public class ClientBroker extends Client {
     public ClientBroker(ConnectionSettings connectionSettings, BrokerSession brokerSession, Transport transport, List<MQTTPacket> pendingQueue) {
         super(connectionSettings, new ClientSession(brokerSession), transport, pendingQueue);
 
-        mKeepAliveTimeout = (connectionSettings.getKeepAliveSeconds()) + (connectionSettings.getKeepAliveSeconds() /2 ) * 1000;
+        mKeepAliveTimeout = (connectionSettings.getKeepAliveSeconds() + (connectionSettings.getKeepAliveSeconds() / 2)) * 1000;
+
     }
 
     public ClientBrokerCallback getBrokerCallback() {
@@ -29,6 +32,7 @@ public class ClientBroker extends Client {
     public void setBrokerCallback(ClientBrokerCallback brokerCallback) {
         mBrokerCallback = brokerCallback;
     }
+
 
     @Override
     protected void onKeepAliveTimeout() throws MQTTProtocolException {
@@ -52,9 +56,12 @@ public class ClientBroker extends Client {
 
     @Override
     public void onSubscribeReceive(Subscribe subscribe) throws MQTTProtocolException {
-        send(new SubAck(subscribe.getMessageID(), subscribe.getQosSub()));
-        if(getClientCallback() != null)
-            getClientCallback().onSubscribeComplete(this, subscribe);
+        if(TopicMatcher.isValidSubscribeTopic(subscribe.getTopic())) {
+            send(new SubAck(subscribe.getMessageID(), subscribe.getQosSub()));
+            if(getClientCallback() != null)
+                getClientCallback().onSubscribeComplete(this, subscribe);
+        } else send(new SubAck(subscribe.getMessageID(), subscribe.getQosSub(), true));
+
     }
 
     @Override
