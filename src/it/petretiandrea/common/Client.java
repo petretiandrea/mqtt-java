@@ -1,5 +1,6 @@
 package it.petretiandrea.common;
 
+import it.petretiandrea.utils.CustomLogger;
 import it.petretiandrea.common.network.Transport;
 import it.petretiandrea.common.session.ClientSession;
 import it.petretiandrea.core.*;
@@ -93,19 +94,20 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
                     MQTTPacket incomePacket;
                     mTransport.connect(new InetSocketAddress(mConnectionSettings.getHostname(), mConnectionSettings.getPort()));
                     mTransport.writePacket(new Connect(MQTTVersion.MQTT_311, mConnectionSettings));
-                    // TODO: Add timeout
-                    if((incomePacket = mTransport.readPacket()) != null) {
+                    // wait connack with timeout = keep alive.
+                    if((incomePacket = mTransport.readPacket((mConnectionSettings.getKeepAliveSeconds() * 1000))) != null) {
                         if(incomePacket.getCommand().equals(MQTTPacket.Type.CONNACK)) {
                             if(((ConnAck)incomePacket).getConnectionStatus() == ConnectionStatus.ACCEPT) {
                                 mLooper = new Thread(this::loop);
                                 mConnected = true;
                                 mLooper.start();
+                                CustomLogger.LOGGER.info("Client " + getClientSession().getClientID() + " connected!");
                                 return true;
                             } else throw new MQTTProtocolException(((ConnAck)incomePacket).getConnectionStatus().toString());
                         }
                     }
                 } catch (IOException | MQTTParseException e) {
-                    e.printStackTrace();
+                    CustomLogger.LOGGER.severe("Client Connection Error: " + e);
                 }
             } else return true; // already connected
 
@@ -273,6 +275,7 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
 
     @Override
     public void onPublishReceive(Publish publish) {
+        CustomLogger.LOGGER.info(getClientSession().getClientID() + " Publish Message Received " + publish);
         if(publish.getQos() == Qos.QOS_0) {
             mClientCallback.onMessageArrived(this, publish.getMessage());
         } else if(publish.getQos() == Qos.QOS_1) {
@@ -286,14 +289,16 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
 
     @Override
     public void onPubAckReceive(PubAck pubAck) {
+        CustomLogger.LOGGER.info(getClientSession().getClientID() + " PubAck Received " + pubAck);
         boolean removed = getClientSession().getSendedNotAck()
                 .removeIf(packet -> (packet instanceof Publish) && ((Publish)packet).getMessage().getMessageID() == pubAck.getMessageID());
-        if(removed)
+        if(removed && mClientCallback != null)
             mClientCallback.onDeliveryComplete(this, pubAck.getMessageID());
     }
 
     @Override
     public void onPubRecReceive(PubRec pubRec) {
+        CustomLogger.LOGGER.info(getClientSession().getClientID() + " PubRec Received " + pubRec);
         getClientSession().getSendedNotAck()
                 .removeIf(packet -> (packet instanceof Publish) && ((Publish)packet).getMessage().getMessageID() == pubRec.getMessageID());
         // store pubrec
@@ -303,6 +308,7 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
 
     @Override
     public void onPubRelReceive(PubRel pubRel) {
+        CustomLogger.LOGGER.info(getClientSession().getClientID() + " PubRel Received " + pubRel);
         getClientSession().getReceivedNotAck().stream()
                 .filter(packet -> (packet instanceof  Publish) && ((Publish)packet).getMessage().getMessageID() == pubRel.getMessageID())
                 .findFirst()
@@ -314,9 +320,10 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
 
     @Override
     public void onPubCompReceive(PubComp pubComp) {
+        CustomLogger.LOGGER.info(getClientSession().getClientID() + " PubComp Received " + pubComp);
         boolean removed = getClientSession().getReceivedNotAck()
                 .removeIf(packet -> (packet instanceof PubRec) && ((PubRec)packet).getMessageID() == pubComp.getMessageID());
-        if(removed)
+        if(removed && mClientCallback != null)
             mClientCallback.onDeliveryComplete(this, pubComp.getMessageID());
     }
 }

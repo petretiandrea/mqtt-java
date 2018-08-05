@@ -11,9 +11,14 @@ public class Utils {
 
     public static final String CHARSET = "UTF-8";
 
-
+    /**
+     * Return the type of packet starting from fixed header of mqtt packet.
+     */
     public static MQTTPacket.Type getType(byte header) throws MQTTParseException { return MQTTPacket.Type.fromInteger((header & 0xF0) >> 4); }
 
+    /**
+     * Get the remaining Length of single mqtt packet
+     */
     public static int getRemainingLength(byte[] packet) throws MQTTParseException {
         // index start from 2nd byte, beacouse the 1st if for mqtt flags
         int index = 1;
@@ -28,10 +33,16 @@ public class Utils {
         return value;
     }
 
+    /**
+     * Get int number for 2 byte Most Significant e Less Significant Bytes.
+     */
     public static int getIntFromMSBLSB(byte msb, byte lsb) {
         return ((msb & 0xFF) << 8) | (lsb & 0xFF);
     }
 
+    /**
+     * Generate a Fixed Header for mqtt packet.
+     **/
     public static byte[] GenerateFixedHeader(MQTTPacket.Type type, int remainLength, boolean dup, int qos, boolean retain) {
         byte[] b = new byte[(remainLength > 127) ? 3 : 2];
         b[0] = (byte) (((type.Value() & 0x0F) << 4) | (((dup ? 1 : 0) & 0x01) << 3) | ((qos & 0x3) << 1) | ((retain ? 1 : 0) & 0x1));
@@ -44,6 +55,9 @@ public class Utils {
         return b;
     }
 
+    /**
+     * Join two bytes arrays.
+     */
     public static byte[] Join(byte[] ar1, byte[] ar2) {
         int i = ar1.length;
         byte[] b = Arrays.copyOf(ar1, ar1.length + ar2.length);
@@ -58,6 +72,12 @@ public class Utils {
         return b;
     }
 
+    /**
+     * Append string to byte collections, adding msb and lsb length of string, and string with UTF-8 codec.
+     * @param byteCollection
+     * @param string
+     * @throws UnsupportedEncodingException
+     */
     public static void AppendString(Collection<Byte> byteCollection, String string) throws UnsupportedEncodingException {
         byteCollection.add((byte) (string.length() >> 8));
         byteCollection.add((byte) (string.length() & 0xFF));

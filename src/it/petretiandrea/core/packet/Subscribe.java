@@ -62,4 +62,13 @@ public class Subscribe extends MQTTPacket {
     public Qos getQosSub() {
         return mQosSub;
     }
+
+    @Override
+    public String toString() {
+        return "Subscribe{" +
+                "mMessageID=" + mMessageID +
+                ", mTopic='" + mTopic + '\'' +
+                ", mQosSub=" + mQosSub +
+                "} " + super.toString();
+    }
 }

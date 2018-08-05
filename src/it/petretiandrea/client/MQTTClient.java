@@ -1,5 +1,6 @@
 package it.petretiandrea.client;
 
+import it.petretiandrea.utils.CustomLogger;
 import it.petretiandrea.common.Client;
 import it.petretiandrea.common.network.TransportTCP;
 import it.petretiandrea.common.session.ClientSession;
@@ -41,6 +42,7 @@ public class MQTTClient extends Client {
 
     @Override
     public void onSubAckReceive(SubAck subAck) {
+        CustomLogger.LOGGER.info("Client: SubAck Received " + subAck);
         // check for subscribe not ack
         getClientSession().getSendedNotAck().stream()
                 .filter(packet -> (packet instanceof Subscribe) && ((Subscribe)packet).getMessageID() == subAck.getMessageID())
@@ -57,9 +59,10 @@ public class MQTTClient extends Client {
     }
 
     @Override
-    public void onUnsubAckReceive(UnsubAck Unsubscribe) {
+    public void onUnsubAckReceive(UnsubAck unsubscribe) {
+        CustomLogger.LOGGER.info("Client: Unsuback Received " + unsubscribe);
         getClientSession().getSendedNotAck().stream()
-                .filter(packet -> (packet instanceof Unsubscribe) && ((Unsubscribe)packet).getMessageID() == Unsubscribe.getMessageID())
+                .filter(packet -> (packet instanceof Unsubscribe) && ((Unsubscribe)packet).getMessageID() == unsubscribe.getMessageID())
                 .findFirst()
                 .ifPresent(packet -> {
                     getClientSession().getSendedNotAck().remove(packet);
@@ -75,20 +78,23 @@ public class MQTTClient extends Client {
     @Override
     public void onPingRespReceive(PingResp pingResp) {
         mTimePingResp = -1;
+        CustomLogger.LOGGER.info("Client: Received Ping Response");
     }
 
     @Override
     public void onDisconnect(Disconnect disconnect) throws MQTTProtocolException {
+        CustomLogger.LOGGER.info("Client disconnected " + getClientSession().getClientID());
         throw new MQTTProtocolException("Client could not receive a Disconnect Message!");
     }
 
     @Override
     protected void onKeepAliveTimeout() throws MQTTProtocolException {
         if(mTimePingResp == -1) {
-            System.out.println("MQTTClient.onKeepAliveTimeout");
+            CustomLogger.LOGGER.info("Client " + getClientSession().getClientID() + ": Timeout keep alive reached, send Ping Request");
             send(new PingReq());
             mTimePingResp = System.currentTimeMillis();
         } else if(System.currentTimeMillis() - mTimePingResp >= mKeepAliveTimeout) {
+            CustomLogger.LOGGER.info("Client " + getClientSession().getClientID() + ": No Ping Response Received");
             throw new MQTTProtocolException("No Ping response received!");
         }
     }

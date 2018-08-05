@@ -1,12 +1,12 @@
 package it.petretiandrea.server;
 
+import it.petretiandrea.utils.CustomLogger;
 import it.petretiandrea.common.Client;
 import it.petretiandrea.common.TopicMatcher;
 import it.petretiandrea.common.network.Transport;
 import it.petretiandrea.common.session.BrokerSession;
 import it.petretiandrea.common.session.ClientSession;
 import it.petretiandrea.core.ConnectionSettings;
-import it.petretiandrea.core.Message;
 import it.petretiandrea.core.exception.MQTTProtocolException;
 import it.petretiandrea.core.packet.*;
 import it.petretiandrea.core.packet.base.MQTTPacket;
@@ -36,6 +36,7 @@ public class ClientBroker extends Client {
 
     @Override
     protected void onKeepAliveTimeout() throws MQTTProtocolException {
+        CustomLogger.LOGGER.info("Broker: Client " + getClientSession().getClientID() + " timeout expired!");
         throw new MQTTProtocolException("No Response from Client!");
     }
 
@@ -57,10 +58,14 @@ public class ClientBroker extends Client {
     @Override
     public void onSubscribeReceive(Subscribe subscribe) throws MQTTProtocolException {
         if(TopicMatcher.isValidSubscribeTopic(subscribe.getTopic())) {
+            CustomLogger.LOGGER.info("Broker: Subscribe received from " + getClientSession().getClientID() + " " + subscribe);
             send(new SubAck(subscribe.getMessageID(), subscribe.getQosSub()));
             if(getClientCallback() != null)
                 getClientCallback().onSubscribeComplete(this, subscribe);
-        } else send(new SubAck(subscribe.getMessageID(), subscribe.getQosSub(), true));
+        } else {
+            CustomLogger.LOGGER.severe("Broker: Invalid subscribe topic received from " + getClientSession().getClientID());
+            send(new SubAck(subscribe.getMessageID(), subscribe.getQosSub(), true));
+        }
 
     }
 
@@ -83,7 +88,7 @@ public class ClientBroker extends Client {
 
     @Override
     public void onPingReqReceive(PingReq pingReq) {
-        System.out.println("ClientBroker.onPingReqReceive");
+        CustomLogger.LOGGER.info("Broker: Ping Request from " + getClientSession().getClientID());
         send(new PingResp());
     }
 

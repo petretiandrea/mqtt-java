@@ -1,12 +1,10 @@
 package it.petretiandrea.server;
 
-import it.petretiandrea.client.MQTTClient;
+import it.petretiandrea.utils.CustomLogger;
 import it.petretiandrea.common.*;
 import it.petretiandrea.common.network.Transport;
 import it.petretiandrea.common.network.TransportTCP;
 import it.petretiandrea.common.session.BrokerSession;
-import it.petretiandrea.common.session.ClientSession;
-import it.petretiandrea.common.session.Session;
 import it.petretiandrea.core.ConnectionSettings;
 import it.petretiandrea.core.ConnectionStatus;
 import it.petretiandrea.core.Message;
@@ -24,8 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 public class Broker implements MQTTClientCallback {
 
@@ -62,6 +58,8 @@ public class Broker implements MQTTClientCallback {
     private ServerSocket mServerSocket;
     private volatile boolean mRunning;
 
+    private Thread mBrokerThread;
+
     public Broker() {
         this(new AccountManager());
     }
@@ -80,9 +78,19 @@ public class Broker implements MQTTClientCallback {
             synchronized (mLock)
             {
                 mServerSocket = new ServerSocket(port);
-                new Thread(this::connectionLoop).start();
+                mBrokerThread = new Thread(this::connectionLoop);
+                mBrokerThread.start();
+                CustomLogger.LOGGER.info("Server running on: " + port);
             }
         }
+    }
+
+    /**
+     * Wait for end of Broker Thread Life.
+     * @throws InterruptedException
+     */
+    public void waitEnd() throws InterruptedException {
+        mBrokerThread.join();
     }
 
     public boolean isRunning() {
@@ -100,6 +108,7 @@ public class Broker implements MQTTClientCallback {
                     MQTTPacket packet = transport.readPacket(TIMEOUT_CONNECT);
                     if(packet.getCommand() == MQTTPacket.Type.CONNECT) {
                         Connect connect = (Connect) packet;
+                        CustomLogger.LOGGER.info("Broker: Client connected request: " + connect);
                         // 3. Perform authentication.
                         if(tryValidateUsernamePassword(connect.getUsername(), connect.getPassword())) {
                             disconnectClient(connect.getClientID());
@@ -119,7 +128,9 @@ public class Broker implements MQTTClientCallback {
 
                             clientBroker.setClientCallback(this);
                             clientBroker.startLoop();
+                            CustomLogger.LOGGER.info("Broker: Client connected: " + connect.getClientID());
                         } else {
+                            CustomLogger.LOGGER.info("Broker: Client " + connect.getClientID() + " BAD LOGIN!");
                             transport.writePacket(new ConnAck(false, ConnectionStatus.REFUSED_BAD_LOGIN));
                         }
                     }
@@ -199,11 +210,33 @@ public class Broker implements MQTTClientCallback {
         return restoredSession;
     }
 
+    private void closeClientConnection(Client client) {
+        if(mClients.containsKey(client.getClientSession().getClientID())) {
+            /* Remove the client from the list */
+            mClients.remove(client.getClientSession().getClientID());
+
+            /* Clean session if the flag clean session is true */
+            if(client.getClientSession().isCleanSession())
+                mSessionManager.cleanSession(client.getClientSession().getClientID());
+            else /* Save Sessions */
+                mSessionManager.addSession(client.getClientSession(), mSubscribeManager.getSubscriptions(client.getClientSession().getClientID()));
+
+            // remove all subscriptions
+            mSubscribeManager.unsubscribeAll(client.getClientSession().getClientID());
+
+            // send if present the will message to other clients
+            // uso on messageArrived che gestisce automanticamente gi il rendirizzamento nella sessione e il retain
+            if(client.getWillMessage() != null)
+                onMessageArrived(client, client.getWillMessage());
+        }
+    }
+
     /* Single client Callbacks */
 
     @Override
     public void onMessageArrived(Client client, Message message) {
-        System.out.println("Broker.onMessageArrived");
+        CustomLogger.LOGGER.info("Broker: Message Received from " + client.getClientSession().getClientID()
+                + " " + message);
 
         Qos receivedQos = message.getQos();
 
@@ -240,42 +273,24 @@ public class Broker implements MQTTClientCallback {
 
     @Override
     public void onDeliveryComplete(Client client, int messageId) {
-
+        CustomLogger.LOGGER.info("Broker: Message delivered with message id " + messageId);
     }
 
     @Override
     public void onConnectionLost(Client client, Throwable ex) {
-        System.out.println("Broker.onConnectionLost");
+        CustomLogger.LOGGER.info("Broker: Connection Lost with " + client.getClientSession().getClientID());
         // same action of onDisconnect
-        onDisconnect(client);
+        closeClientConnection(client);
     }
 
     @Override
     public void onDisconnect(Client client) {
-        System.out.println("Broker.onDisconnect " + client.getClientSession().getClientID());
-        if(mClients.containsKey(client.getClientSession().getClientID())) {
-            /* Remove the client from the list */
-            mClients.remove(client.getClientSession().getClientID());
-
-            /* Clean session if the flag clean session is true */
-            if(client.getClientSession().isCleanSession())
-                mSessionManager.cleanSession(client.getClientSession().getClientID());
-            else /* Save Sessions */
-                mSessionManager.addSession(client.getClientSession(), mSubscribeManager.getSubscriptions(client.getClientSession().getClientID()));
-
-            // remove all subscriptions
-            mSubscribeManager.unsubscribeAll(client.getClientSession().getClientID());
-
-            // send if present the will message to other clients
-            // uso on messageArrived che gestisce automanticamente gi il rendirizzamento nella sessione e il retain
-            if(client.getWillMessage() != null)
-                onMessageArrived(client, client.getWillMessage());
-        }
+        CustomLogger.LOGGER.info("Broker: Disconnect " + client.getClientSession().getClientID());
+        closeClientConnection(client);
     }
 
     @Override
     public void onSubscribeComplete(Client client, Subscribe subscribe) {
-        System.out.println("Broker.onSubscribeComplete");
         mSubscribeManager.subscribe(client.getClientSession().getClientID(), subscribe);
         mRetainMessages.stream()
                 .filter(message -> TopicMatcher.matchTopic(subscribe.getTopic(), message.getTopic()))
@@ -284,7 +299,7 @@ public class Broker implements MQTTClientCallback {
 
     @Override
     public void onUnsubscribeComplete(Client client, Unsubscribe unsubscribe) {
-        System.out.println("Broker.onUnsubscribeComplete");
+        CustomLogger.LOGGER.info("Broker: Unsubscribe from " + client.getClientSession().getClientID() + " " + unsubscribe);
         mSubscribeManager.unsubscribe(client.getClientSession().getClientID(), unsubscribe);
     }
 
