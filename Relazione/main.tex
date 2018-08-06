@@ -9,10 +9,14 @@
 \usepackage{amsmath}
 \geometry{a4paper,bottom=1.5cm}
 
+%Java code highlight
+\lstset{language=Java} 
 
-\title{Progetto Algoritmi e Strutture dati}
+
+\title{Progetto Reti di Calcolatori \\[5em] 
+\large Protocollo MQTT Java}
 \author{Petreti Andrea\\\small Matricola 272822}
-\date{25 Giugno 2016}
+\date{06 Agosto 2016}
 \begin{document}
 
 
@@ -71,12 +75,18 @@ Ogni pacchetto MQTT, come detto precedentemente ha un header fisso di 2 byte. Il
 
 \section{Funzioni Principali MQTT}
 
-\subsection{Connessione}
-La connessione al Broker avviene tramite l'invio di un pacchetto di connessione (Connect), il quale contiene molte informazioni tra cui:
+\subsection{Connessione e Disconnesione}
+La connessione al Broker avviene tramite l'invio di un pacchetto di connessione (Connect), il quale contiene molte informazioni per la gestione da parte del Broker della sessione e del canale di comunicazione. I principali parametri inviati sono:
 
 \begin{itemize}
-	\item 
+	\item Nome Protocollo e Versione Protocollo, ovvero una stringa e un valore numerico per indicare la versione di MQTT 3.1 o 3.1.1.
+	\item Flag di connessione di 1 byte, tra cui 1 bit per il flag Username, per indicare se nel payload sarà presente uno username, stessa cosa per il flag Password.\\4 bit per Will Flag, Will Qos e Will retain ed infine un bit per la Clean Session. 
+	\item Payload che conterrà un ClientID di massimo 23 caraterri UTF-8.
+	\item Il topic del messaggio ``Will", la Qos, e il contenuto del messaggio stesso.
+	\item Username e Password, obbligatori a seconda di come sono stati impostati i precendenti Flags.
 \end{itemize}
+Il Broker quando riceve un richiesta di connessione, deve verificare l'intero pacchetto, controllando la coerenza tra Flags e Payload, nonchè effettuare l'autenticazione se username e password sono stati impostati. Infine il Broker risponde con un pacchetto ``ConnAck", che contiene un codice per indicare lo stato della connessione e un flag per che segnala la presenza o meno di una sessione persistente sul Broker per quel 
+
 
 \subsection{Sessione}
 
@@ -119,4 +129,20 @@ Il Broker, invece, quando il suo timer raggiunge il tempo di keep alive, la conn
 \textbf{N.B.} Ovviamente è importante che entrambi impostino una soglia in eccesso e in difetto per il keep alive, in modo tale da considere anche eventuali ritardi dovuti al traffico sulla rete. Ad esempio il Broker imposterà una soglia in eccesso per attendere leggermente oltre il tempo di keep alive, che il client invii almeno un'messaggio prima di chiudere la connessione. Mentre il cliente imposterà una soglia in difetto, per inviare un pacchetto di PingReq, prima del raggiungimento effetivo del tempo di keep alive.
 
 
+\section{Implementazione Java}
+Il protocollo MQTT precendemente descritto è stato implementato nel linguaggio Java, sia il Broker che il Client. Lo sviluppo è partito dall'implementazione dei vari pacchetti MQTT in oggetti Java, in particolare ogni classe relativa ad un certo tipo di pacchetto, supporta due tipi di operazione:
+\begin{itemize}
+	\item Creazione del pacchetto e trasformazione di esso in bytes, pronti per essere inviati tramite socket.
+	\item Trasformazione e validazione dei bytes ricevuta da socket in oggetto Java.
+\end{itemize}
+Ciò ha permesso poi di trattare i pacchetti come semplici oggetti Java e quindi di implementare in maniera più semplice il sistema di gestione code e sessione del Broker e del Client. Inoltre poichè ogni pacchetto ha un header fisso, è stata definita una classe padre che ha il ruolo di effetuare il "parsing" dei byte recevuti sempre allo stesso modo. Riporto di seguito il costruttore di tale classe:
+\begin{lstlisting}
+public MQTTPacket(byte fixedHeader) throws MQTTParseException {
+	mCommand = Type.fromInteger((fixedHeader & 0xF0) >> 4);
+	mQos = Qos.fromInteger((fixedHeader & 0x06) >> 1);
+	mDup = (fixedHeader & 0x08 >> 3) == 1;
+	mRetain = (fixedHeader & 0x01) == 1;
+}
+\end{lstlisting}
+Lo stesso costruttore viene invocato ogni volta che si ``costruiscono" in oggetti Java i pacchetti ricevuti.
 \end{document}
