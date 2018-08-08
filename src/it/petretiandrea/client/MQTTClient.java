@@ -1,5 +1,6 @@
 package it.petretiandrea.client;
 
+import it.petretiandrea.common.network.TransportTLS;
 import it.petretiandrea.utils.CustomLogger;
 import it.petretiandrea.common.Client;
 import it.petretiandrea.common.network.TransportTCP;
@@ -8,7 +9,9 @@ import it.petretiandrea.core.ConnectionSettings;
 import it.petretiandrea.core.exception.MQTTProtocolException;
 import it.petretiandrea.core.packet.*;
 
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 
 public class MQTTClient extends Client {
@@ -16,7 +19,7 @@ public class MQTTClient extends Client {
     private long mKeepAliveTimeout;
     private long mTimePingResp;
 
-    public MQTTClient(ConnectionSettings connectionSettings) throws IOException {
+    public MQTTClient(ConnectionSettings connectionSettings) throws IOException, NoSuchAlgorithmException {
         super(connectionSettings,
                 new ClientSession(connectionSettings.getClientId(), connectionSettings.isCleanSession()),
                 new TransportTCP(),

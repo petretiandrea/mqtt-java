@@ -92,7 +92,7 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
                 // need to be connected!
                 try {
                     MQTTPacket incomePacket;
-                    mTransport.connect(new InetSocketAddress(mConnectionSettings.getHostname(), mConnectionSettings.getPort()));
+                    mTransport.connect(mConnectionSettings.getHostname(), mConnectionSettings.getPort());
                     mTransport.writePacket(new Connect(MQTTVersion.MQTT_311, mConnectionSettings));
                     // wait connack with timeout = keep alive.
                     if((incomePacket = mTransport.readPacket((mConnectionSettings.getKeepAliveSeconds() * 1000))) != null) {

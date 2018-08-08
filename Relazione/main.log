@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.19 (MiKTeX 2.9.6630 64-bit) (preloaded format=pdflatex 2018.6.18)  7 AUG 2018 17:59
+This is pdfTeX, Version 3.14159265-2.6-1.40.19 (MiKTeX 2.9.6630 64-bit) (preloaded format=pdflatex 2018.6.18)  9 AUG 2018 00:21
 entering extended mode
 **./main.tex
 (main.tex
@@ -956,24 +956,21 @@ Package: amsfonts 2013/01/14 v3.01 Basic AMSFonts support
 \symAMSb=\mathgroup5
 LaTeX Font Info:    Overwriting math alphabet `\mathfrak' in version `bold'
 (Font)                  U/euf/m/n --> U/euf/b/n on input line 106.
-)
-("F:\Programmi (x86)\MiKTeX\tex\latex\listings\lstlang1.sty"
-File: lstlang1.sty 2015/06/04 1.6 listings language file
 ) (main.aux)
 \openout1 = `main.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 20.
-LaTeX Font Info:    ... okay on input line 20.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 20.
-LaTeX Font Info:    ... okay on input line 20.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 20.
-LaTeX Font Info:    ... okay on input line 20.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 20.
-LaTeX Font Info:    ... okay on input line 20.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 20.
-LaTeX Font Info:    ... okay on input line 20.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 20.
-LaTeX Font Info:    ... okay on input line 20.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
 \c@lstlisting=\count151
 
 *geometry* driver: auto-detecting
@@ -1076,13 +1073,13 @@ G,.JBIG2,.JB2,.eps]
 Package pgfplots Warning: running in backwards compatibility mode (unsuitable t
 ick labels; missing features). Consider writing \pgfplotsset{compat=1.16} into 
 your preamble.
- on input line 20.
+ on input line 37.
 
-LaTeX Font Info:    Try loading font information for U+msa on input line 23.
+LaTeX Font Info:    Try loading font information for U+msa on input line 40.
 ("F:\Programmi (x86)\MiKTeX\tex\latex\amsfonts\umsa.fd"
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Try loading font information for U+msb on input line 23.
+LaTeX Font Info:    Try loading font information for U+msb on input line 40.
 
 ("F:\Programmi (x86)\MiKTeX\tex\latex\amsfonts\umsb.fd"
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
@@ -1094,94 +1091,118 @@ ain.toc)
 \openout4 = `main.toc'.
 
  [2]
-LaTeX Font Info:    Try loading font information for OMS+cmr on input line 37.
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 54.
 
 ("F:\Programmi (x86)\MiKTeX\tex\latex\base\omscmr.fd"
 File: omscmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 37.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 54.
 <immagini/broker_client_img.png, id=17, 1203.7472pt x 679.78969pt>
 File: immagini/broker_client_img.png Graphic file (type png)
 <use immagini/broker_client_img.png>
-Package pdftex.def Info: immagini/broker_client_img.png  used on input line 45.
+Package pdftex.def Info: immagini/broker_client_img.png  used on input line 62.
 
 (pdftex.def)             Requested size: 240.74516pt x 135.95552pt.
 
-Underfull \hbox (badness 10000) in paragraph at lines 48--50
+Underfull \hbox (badness 10000) in paragraph at lines 65--67
 
  []
 
 <immagini/mqtt_qos.jpg, id=18, 640.3925pt x 360.34625pt>
 File: immagini/mqtt_qos.jpg Graphic file (type jpg)
 <use immagini/mqtt_qos.jpg>
-Package pdftex.def Info: immagini/mqtt_qos.jpg  used on input line 54.
+Package pdftex.def Info: immagini/mqtt_qos.jpg  used on input line 71.
 (pdftex.def)             Requested size: 256.15245pt x 144.13594pt.
 [3 <./immagini/broker_client_img.png> <./immagini/mqtt_qos.jpg>]
-Underfull \hbox (badness 10000) in paragraph at lines 88--89
+Underfull \hbox (badness 10000) in paragraph at lines 105--106
 
  []
 
 [4] [5]
-Underfull \hbox (badness 10000) in paragraph at lines 138--141
+Underfull \hbox (badness 10000) in paragraph at lines 155--158
 
  []
 
-[6]
-LaTeX Font Info:    Try loading font information for OML+cmr on input line 154.
+[6] ("F:\Programmi (x86)\MiKTeX\tex\latex\listings\lstlang1.sty"
+File: lstlang1.sty 2015/06/04 1.6 listings language file
+)
+LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <9> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 184.
+LaTeX Font Info:    Try loading font information for OML+cmr on input line 185.
 
- ("F:\Programmi (x86)\MiKTeX\tex\latex\base\omlcmr.fd"
+
+("F:\Programmi (x86)\MiKTeX\tex\latex\base\omlcmr.fd"
 File: omlcmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
 )
-LaTeX Font Info:    Font shape `OML/cmr/m/n' in size <10> not available
-(Font)              Font shape `OML/cmm/m/it' tried instead on input line 154.
+LaTeX Font Info:    Font shape `OML/cmr/m/n' in size <9> not available
+(Font)              Font shape `OML/cmm/m/it' tried instead on input line 185.
 
-Underfull \hbox (badness 10000) in paragraph at lines 174--176
+Underfull \hbox (badness 10000) in paragraph at lines 208--210
 
  []
 
 [7]
-<immagini/wireshark1.png, id=39, 699.36281pt x 158.84344pt>
+<immagini/wireshark1.png, id=40, 699.36281pt x 158.84344pt>
 File: immagini/wireshark1.png Graphic file (type png)
 <use immagini/wireshark1.png>
-Package pdftex.def Info: immagini/wireshark1.png  used on input line 205.
-(pdftex.def)             Requested size: 349.68054pt x 79.42152pt.
-<immagini/wireshark2.png, id=41, 386.94562pt x 129.48375pt>
+Package pdftex.def Info: immagini/wireshark1.png  used on input line 239.
+(pdftex.def)             Requested size: 419.62093pt x 95.3068pt.
+<immagini/wireshark2.png, id=42, 386.94562pt x 129.48375pt>
 File: immagini/wireshark2.png Graphic file (type png)
 <use immagini/wireshark2.png>
-Package pdftex.def Info: immagini/wireshark2.png  used on input line 206.
-(pdftex.def)             Requested size: 193.47234pt x 64.7417pt.
-<immagini/serversocket.png, id=42, 280.04625pt x 367.3725pt>
+Package pdftex.def Info: immagini/wireshark2.png  used on input line 240.
+(pdftex.def)             Requested size: 232.16916pt x 77.69083pt.
+
+Overfull \hbox (1.36725pt too wide) in paragraph at lines 239--241
+ [] 
+ []
+
+[8 <./immagini/wireshark1.png> <./immagini/wireshark2.png>]
+<immagini/serversocket.png, id=49, 280.04625pt x 367.3725pt>
 File: immagini/serversocket.png Graphic file (type png)
 <use immagini/serversocket.png>
-Package pdftex.def Info: immagini/serversocket.png  used on input line 212.
+Package pdftex.def Info: immagini/serversocket.png  used on input line 255.
 (pdftex.def)             Requested size: 168.02904pt x 220.42519pt.
- [8 <./immagini/wireshark1.png> <./immagini/wireshark2.png>]
-Underfull \hbox (badness 10000) in paragraph at lines 214--216
+
+Underfull \hbox (badness 10000) in paragraph at lines 257--260
 
  []
 
-[9 <./immagini/serversocket.png>] (main.aux) ) 
+[9 <./immagini/serversocket.png>]
+Underfull \hbox (badness 10000) in paragraph at lines 265--267
+
+ []
+
+LaTeX Font Info:    Font shape `OML/cmr/m/it' in size <9> not available
+(Font)              Font shape `OML/cmm/m/it' tried instead on input line 279.
+
+Underfull \hbox (badness 10000) in paragraph at lines 288--289
+
+ []
+
+[10] [11] (main.aux) ) 
 Here is how much of TeX's memory you used:
- 25362 strings out of 493305
- 620109 string characters out of 3139709
- 880034 words of memory out of 3000000
- 28458 multiletter control sequences out of 15000+200000
- 12148 words of font info for 47 fonts, out of 3000000 for 9000
+ 25144 strings out of 493305
+ 618676 string characters out of 3139709
+ 866032 words of memory out of 3000000
+ 28236 multiletter control sequences out of 15000+200000
+ 13560 words of font info for 53 fonts, out of 3000000 for 9000
  1141 hyphenation exceptions out of 8191
- 62i,7n,96p,1130b,1568s stack positions out of 5000i,500n,10000p,200000b,50000s
-<F:/Programmi (x86)/MiKTeX/fonts/
-type1/public/amsfonts/cm/cmbx10.pfb><F:/Programmi (x86)/MiKTeX/fonts/type1/publ
-ic/amsfonts/cm/cmbx12.pfb><F:/Programmi (x86)/MiKTeX/fonts/type1/public/amsfont
-s/cm/cmmi10.pfb><F:/Programmi (x86)/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10
-.pfb><F:/Programmi (x86)/MiKTeX/fonts/type1/public/amsfonts/cm/cmr12.pfb><F:/Pr
-ogrammi (x86)/MiKTeX/fonts/type1/public/amsfonts/cm/cmr17.pfb><F:/Programmi (x8
-6)/MiKTeX/fonts/type1/public/amsfonts/cm/cmr9.pfb><F:/Programmi (x86)/MiKTeX/fo
-nts/type1/public/amsfonts/cm/cmsy10.pfb><F:/Programmi (x86)/MiKTeX/fonts/type1/
-public/amsfonts/cm/cmti10.pfb>
-Output written on main.pdf (9 pages, 278666 bytes).
+ 62i,7n,96p,1521b,896s stack positions out of 5000i,500n,10000p,200000b,50000s
+<F:/Programmi (x86)/MiKTeX/fonts/type1/public/amsfonts/cm
+/cmbx10.pfb><F:/Programmi (x86)/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx12.pf
+b><F:/Programmi (x86)/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi9.pfb><F:/Progr
+ammi (x86)/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb><F:/Programmi (x86)/
+MiKTeX/fonts/type1/public/amsfonts/cm/cmr12.pfb><F:/Programmi (x86)/MiKTeX/font
+s/type1/public/amsfonts/cm/cmr17.pfb><F:/Programmi (x86)/MiKTeX/fonts/type1/pub
+lic/amsfonts/cm/cmr9.pfb><F:/Programmi (x86)/MiKTeX/fonts/type1/public/amsfonts
+/cm/cmsy10.pfb><F:/Programmi (x86)/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy9.
+pfb><F:/Programmi (x86)/MiKTeX/fonts/type1/public/amsfonts/cm/cmti9.pfb><F:/Pro
+grammi (x86)/MiKTeX/fonts/type1/public/amsfonts/cm/cmtt9.pfb>
+Output written on main.pdf (11 pages, 317375 bytes).
 PDF statistics:
- 81 PDF objects out of 1000 (max. 8388607)
+ 95 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
  38 words of extra memory for PDF output out of 10000 (max. 10000000)
 

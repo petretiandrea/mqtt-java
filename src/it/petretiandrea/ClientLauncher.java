@@ -9,10 +9,11 @@ import it.petretiandrea.utils.CustomLogger;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.security.NoSuchAlgorithmException;
 
 public class ClientLauncher {
 
-    public static void main(String[] args) throws IOException, MQTTProtocolException {
+    public static void main(String[] args) throws IOException, MQTTProtocolException, NoSuchAlgorithmException {
 
         // Creazione client che si sotto iscrive soltanto, con le relative impostazioni di connessione
         MQTTClient subscribeClient = new MQTTClient(new ConnectionSettingsBuilder()

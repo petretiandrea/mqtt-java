@@ -8,7 +8,7 @@ import java.net.SocketAddress;
 
 public interface Transport {
 
-    void connect(SocketAddress socketAddress) throws IOException;
+    void connect(String hostname, int port) throws IOException;
 
     MQTTPacket readPacket(int timeout) throws IOException, MQTTParseException;
     MQTTPacket readPacket() throws IOException, MQTTParseException;

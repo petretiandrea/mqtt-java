@@ -4,6 +4,8 @@ import it.petretiandrea.core.exception.MQTTParseException;
 import it.petretiandrea.core.packet.base.MQTTPacket;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.concurrent.locks.ReentrantLock;
@@ -30,10 +32,10 @@ public class TransportTCP implements Transport {
     }
 
     @Override
-    public void connect(SocketAddress socketAddress) throws IOException {
+    public void connect(String hostname, int port) throws IOException {
         if(mSocket == null) {
             mSocket = new Socket();
-            mSocket.connect(socketAddress);
+            mSocket.connect(new InetSocketAddress(hostname, port));
             mMQTTReader = new BufferedMQTTReader(mSocket.getInputStream());
         }
     }
