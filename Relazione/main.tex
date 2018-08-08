@@ -10,7 +10,7 @@
 \geometry{a4paper,bottom=1.5cm}
 
 %Java code highlight
-\lstset{language=Java} 
+\lstset{language=Java, breaklines=true} 
 
 
 \title{Progetto Reti di Calcolatori \\[5em] 
@@ -81,14 +81,27 @@ La connessione al Broker avviene tramite l'invio di un pacchetto di connessione 
 \begin{itemize}
 	\item Nome Protocollo e Versione Protocollo, ovvero una stringa e un valore numerico per indicare la versione di MQTT 3.1 o 3.1.1.
 	\item Flag di connessione di 1 byte, tra cui 1 bit per il flag Username, per indicare se nel payload sarà presente uno username, stessa cosa per il flag Password.\\4 bit per Will Flag, Will Qos e Will retain ed infine un bit per la Clean Session. 
-	\item Payload che conterrà un ClientID di massimo 23 caraterri UTF-8.
+	\item Payload che conterrà un ClientID di massimo 23 caraterri UTF-8, che dovrà rappresentare in maniera univoca il Client.
 	\item Il topic del messaggio ``Will", la Qos, e il contenuto del messaggio stesso.
 	\item Username e Password, obbligatori a seconda di come sono stati impostati i precendenti Flags.
 \end{itemize}
-Il Broker quando riceve un richiesta di connessione, deve verificare l'intero pacchetto, controllando la coerenza tra Flags e Payload, nonchè effettuare l'autenticazione se username e password sono stati impostati. Infine il Broker risponde con un pacchetto ``ConnAck", che contiene un codice per indicare lo stato della connessione e un flag per che segnala la presenza o meno di una sessione persistente sul Broker per quel 
+Il Broker quando riceve un richiesta di connessione, deve verificare l'intero pacchetto, controllando la coerenza tra Flags e Payload, nonchè effettuare l'autenticazione se username e password sono stati impostati. Infine il Broker risponde con un pacchetto ``ConnAck", che contiene un codice per indicare lo stato della connessione (Accetata, Autenticazione fallita, ecc..) e un flag che segnala la presenza o meno di una sessione persistente sul Broker per quel Client.\\\\La disconnessione invece avviene in maniera molto semplice, e solo da parte del Client, ovvero solo quest'ultimo, quando vuole disconnetersi invia un pacchetto ``Disconnect" e chiude la connessione. Il Broker invece non può inviare un pacchetto di Disconnect, ma soltanto riceverlo, e alla ricezione, anch'esso chiude la connessione, in tutti gli altri casi quando il broker si disconnette per un qualche errore chiude semplicemente la connessione. Ad esempio una delle politiche MQTT è che quando due client con stesso ClientID tentano di connetersi, il Broker deve disconnetere il meno recente, e lo fa chiudendo la connessione.
 
 
 \subsection{Sessione}
+La Sessione su MQTT, assume un comportamento differente a seconda del valore del flag CleanSession inviato all'atto della connessione. Nello specifico la sessione del Client non è persistente e contiene:
+\begin{itemize}
+	\item Tutti i messaggi con Qos1 o Qos2 che sono stati inviati al Broker, ma che ancora esso non ha confermato con degli Ack.
+	\item Tutti i messaggi con Qos2 che sono stati ricevuti dal Broker, ma che ancora non sono stati completamente confermati, ovvero che non tutti i pacchetti PubRel, PubRec e PubComp sono stati scambiati.
+\end{itemize}
+La sessione memorizzata dal Broker per ogni Client, invece è persistente se il flag CleanSession è falso, altrimenti la sessione viene eliminata al momento della disconnessione, inoltre contiene più dati rispetto alla sessione del client:
+\begin{itemize}
+	\item Tutti i Topic a cui il Client è sottoscritto.
+	\item Messaggi Qos1 e Qos2 che sono stati inviati al Client, ma ancora non confermati completamente da Ack.
+	\item Messaggi Qos1 e Qos2 che sono in attessa di essere inviati al Client.
+	\item Messaggi Qos2 che sono stati ricevuti dal Client, ma ancora non complemetamente confermati dallo scambio degli Ack di Qos2.
+\end{itemize}
+Il vantaggio di avere una sessione persistente, è che quando un client (chiamimolo Pippo) si disconnette la sessione resta salvata sul Broker, e tutti i messaggi che arrivano da altri client verso Pippo (in base ai Topic a cui è iscritto), vengono salvati sulla sua sessione. Quando Pippo si riconnette, il Broker inoltra tutti i messaggi destinati a lui, ma che non ha potuto ricevere in quanto offline. Inoltre Pippo non deve riscriversi ai Topic, poichè il Broker li conosce già dalla sessione. Questo ad esempio è molto utile quando si ha una rete con poca banda, o quando si hanno dispostivi che vogliamo consumino poco, perchè noi ci iscriviamo soltanto una volta ai Topic di nostro interesse, quindi inviamo soltato una volta i pacchetti di iscrizione, e per ridurre i consumi spegniamo e accendiamo il dispositvo ogni tot. di tempo senza preoccuparci di perdere i messaggi destinati ad esso, in quanto è compito del Broker memorizzarli e reinviarli.
 
 
 \subsection{Pubblicazione}
@@ -133,9 +146,9 @@ Il Broker, invece, quando il suo timer raggiunge il tempo di keep alive, la conn
 Il protocollo MQTT precendemente descritto è stato implementato nel linguaggio Java, sia il Broker che il Client. Lo sviluppo è partito dall'implementazione dei vari pacchetti MQTT in oggetti Java, in particolare ogni classe relativa ad un certo tipo di pacchetto, supporta due tipi di operazione:
 \begin{itemize}
 	\item Creazione del pacchetto e trasformazione di esso in bytes, pronti per essere inviati tramite socket.
-	\item Trasformazione e validazione dei bytes ricevuta da socket in oggetto Java.
+	\item Trasformazione e validazione dei bytes ricevuti da socket in oggetto Java.
 \end{itemize}
-Ciò ha permesso poi di trattare i pacchetti come semplici oggetti Java e quindi di implementare in maniera più semplice il sistema di gestione code e sessione del Broker e del Client. Inoltre poichè ogni pacchetto ha un header fisso, è stata definita una classe padre che ha il ruolo di effetuare il "parsing" dei byte recevuti sempre allo stesso modo. Riporto di seguito il costruttore di tale classe:
+Ciò ha permesso poi di trattare i pacchetti come semplici oggetti Java e quindi di implementare in maniera più semplice il sistema di gestione code e sessione del Broker e del Client. Inoltre poichè ogni pacchetto ha un header fisso, è stata definita una classe padre che ha il ruolo di effetuare il ``parsing" dei bytes letti da socket. Riporto di seguito il costruttore di tale classe:
 \begin{lstlisting}
 public MQTTPacket(byte fixedHeader) throws MQTTParseException {
 	mCommand = Type.fromInteger((fixedHeader & 0xF0) >> 4);
@@ -144,5 +157,67 @@ public MQTTPacket(byte fixedHeader) throws MQTTParseException {
 	mRetain = (fixedHeader & 0x01) == 1;
 }
 \end{lstlisting}
-Lo stesso costruttore viene invocato ogni volta che si ``costruiscono" in oggetti Java i pacchetti ricevuti.
+Lo stesso costruttore viene invocato ogni volta che un'pacchetto MQTT viene ricevuto. Qui riport invece l'operazione inversa, ovvero la trasformazione in bytes:
+\begin{lstlisting}
+public static byte[] GenerateFixedHeader(MQTTPacket.Type type, int remainLength, boolean dup, int qos, boolean retain) {
+	byte[] b = new byte[(remainLength > 127) ? 3 : 2];
+	b[0] = (byte) (((type.Value() & 0x0F) << 4) | (((dup ? 1 : 0) & 0x01) << 3) | ((qos & 0x3) << 1) | ((retain ? 1 : 0) & 0x1));
+	if(remainLength > 127) {
+		b[1] = (byte) ((remainLength % 128) | 0x80);
+		b[2] = (byte) (remainLength / 128);
+	} else
+		b[1] = (byte) remainLength;
+	
+	return b;
+}
+\end{lstlisting}
+Come facilmente intuibili dalla parte di codice, in byte 0, ovvero il primo, viene generato in base alla tipologia del pacchetto MQTT, dalla Qos, dal flag retain e duplicate. Il secondo byte invece contiene la lunghezza rimanente del pacchetto (payload).\\\\
+Successivamente è stato implementato ``l'algoritmo" che permette di dividere in blocchi di bytes coerenti, ovvero in Header Fisso e Payload, i bytes provenienti da Socket, in pratica si utilizza il secondo byte del pacchetto MQTT, in quanto contiene la lunghezza del payload. La sezione di codice sottostante, in particolare la parte racchiusa nel do-while, estare proprio questa informazione. Inoltre sottolineo che l'algoritmo è fedele a quello che si trova nella documentazione dello standard MQTT 3.1.1. Una volta estratta la lunghezza del Payload, si leggono gli n successivi bytes i quali verrano trasformati in oggetto Java. 
+\begin{lstlisting}
+public synchronized MQTTPacket nextMQTTPacket() throws IOException, MQTTParseException {
+	byte fixedHeader = (byte) mBufferedInputStream.read();
+	if(fixedHeader != -1) // end of stream reached
+	{
+		Utils.getType(fixedHeader);
+		
+		int multiplier = 1;
+		int length = 0;
+		byte tmp;
+		do {
+			tmp = (byte) mBufferedInputStream.read();
+			length += (tmp & 127) * multiplier;
+			multiplier *= 128;
+			if(multiplier > 128*128*128)
+				throw new MQTTParseException("Malformed Remaining Length", MQTTParseException.Reason.INVALID_MQTT_PACKET);
+		} while ((tmp & 128) != 0);
+		
+		// read all packet with length
+		byte[] packet = new byte[length];
+		if(mBufferedInputStream.read(packet, 0, packet.length) >= 0) {
+			return MQTTPacket.parseBody(fixedHeader, packet);
+		}
+	}
+	return null;
+}
+\end{lstlisting}
+Per testare il corretto invio e ricezione dei messaggi, ho utilizzato WireShark, che mi consentiva di intercettare (sniffing) tutto il traffico di rete e di filtrarlo, in questo modo sono riuscito a verificare l'assenza di pacchetti MQTT malformati.
+\begin{center}
+	\includegraphics[scale=0.5]{immagini/wireshark1.png}
+	\includegraphics[scale=0.5]{immagini/wireshark2.png}
+\end{center}
+
+Definiti quindi tutti i metodi per la lettura di bytes in oggetto Java e la scrittura da oggetto Java a Bytes, possiamo concentrarci sul resto del sistema. In particolare partiamo dal Broker, il quale svolgendo il ruolo di ``server", dovrà rimanere in ascolto di connessioni in arrivo, in Java ciò è semplificato dalla presenza della classe ServerSocket, che con il metodo listen attende l'arrivo di una connessione e restituisce la relativa Socket. Riporto il seguente schema che riassume la fase di connessione:
+
+\begin{center}
+	\includegraphics[scale=0.6]{immagini/serversocket.png}
+\end{center}
+Come si deduce dall'immagine ogni Client connesso con il Broker, viene gestito in un Thread separato. Quando la ServerSocket ci restituisce una Socket per comunicare con il Client appena connesso, il Broker attende l'arrivo del pacchetto Connect da parte del Client, controlla la validità del pacchetto, ed effetua l'autenticazione se necessaria, dopodichè risponde con una ConnAck che contiene l'esito della fase di connessione\\\\Il thread che gestisce il client ``lato broker", si occupa di ricevere ed inviare messaggi. In particolare la classe del thread Client, instanzia una sessione, nella quale, come detto nella sezione omonima, mantiene tutte le informazioni relative ai topic e ai messaggi, e le mantiene utilizzando più code, o meglio code sincronizzate, in quanto siamo in un'ambiente concorrente. In generale il comportamento di ogni thread, è rappresentato da un loop infinito, nel quale:
+\begin{itemize}
+	\item Vengono inviati tutti messaggi in attesa sulla coda di invio.
+	\item Si leggono i messaggi in arrivo e li si processano a seconda della tipologia del messaggio.
+	\item Si controlla il timer di keep alive, e se ha raggiunto il timeout, si chiude la connessione con il client (comportamento lato broker), o si invia una ping request (comportamento lato client.)
+\end{itemize}
+
+Ogni thread client, mette a disposizone un metodo per la pubblicazione di messaggi, che non fa altro che aggiungere il messaggio alla coda di invio, sarà il loop che invierà effetivamente il messsaggio.\\ Quando si riceve un messaggio all'interno del loop, si ricostruisce il pacchetto, e si estrae la tipologia di esso, in base a ciò vengono intraprese differenti azioni, seguendo ciò che ho riportato nelle sezioni precedenti.
+
 \end{document}

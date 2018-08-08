@@ -44,21 +44,4 @@ public class BufferedMQTTReader {
         }
         return null;
     }
-
-    /*
-    public static void main(String[] args) {
-        byte[] test = {48, 17, 0, 10, 112, 114, 111, 118, 97, 116, 111, 112, 105, 99, 99, 105, 97, 111, 111, -32, 0};
-        ByteArrayInputStream bytes = new ByteArrayInputStream(test);
-        BufferedMQTTReader reader = new BufferedMQTTReader(bytes);
-
-        try {
-            MQTTPacket packet = reader.nextMQTTPacket();
-            System.out.println(packet);
-            packet = reader.nextMQTTPacket();
-            System.out.println(packet);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    } */
-
 }

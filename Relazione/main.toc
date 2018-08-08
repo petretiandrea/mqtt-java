@@ -4,6 +4,6 @@
 \contentsline {subsection}{\numberline {3.1}Connessione e Disconnesione}{4}
 \contentsline {subsection}{\numberline {3.2}Sessione}{5}
 \contentsline {subsection}{\numberline {3.3}Pubblicazione}{5}
-\contentsline {subsection}{\numberline {3.4}Sottoscrizione}{5}
+\contentsline {subsection}{\numberline {3.4}Sottoscrizione}{6}
 \contentsline {subsection}{\numberline {3.5}Keep Alive}{6}
-\contentsline {section}{\numberline {4}Implementazione Java}{6}
+\contentsline {section}{\numberline {4}Implementazione Java}{7}

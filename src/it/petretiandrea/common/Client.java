@@ -277,9 +277,11 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
     public void onPublishReceive(Publish publish) {
         CustomLogger.LOGGER.info(getClientSession().getClientID() + " Publish Message Received " + publish);
         if(publish.getQos() == Qos.QOS_0) {
-            mClientCallback.onMessageArrived(this, publish.getMessage());
+            if(mClientCallback != null)
+                mClientCallback.onMessageArrived(this, publish.getMessage());
         } else if(publish.getQos() == Qos.QOS_1) {
-            mClientCallback.onMessageArrived(this, publish.getMessage());
+            if(mClientCallback != null)
+                mClientCallback.onMessageArrived(this, publish.getMessage());
             mPendingQueue.add(new PubAck(publish.getMessage().getMessageID()));
         } else if(publish.getQos() == Qos.QOS_2) {
             getClientSession().getReceivedNotAck().add(publish);
