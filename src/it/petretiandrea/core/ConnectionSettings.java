@@ -14,7 +14,9 @@ public class ConnectionSettings {
     private Message willMessage;
     private int mKeepAliveSeconds;
 
-    public static ConnectionSettings from(Connect connect) {
+    private boolean mUseTLS;
+
+    public static ConnectionSettings from(Connect connect, boolean useTLS) {
         return new ConnectionSettings(
                 "",
                 0,
@@ -23,11 +25,12 @@ public class ConnectionSettings {
                 connect.getPassword(),
                 connect.isCleanSession(),
                 connect.getWillMessage(),
-                connect.getKeepAliveSeconds()
+                connect.getKeepAliveSeconds(),
+                useTLS
         );
     }
 
-    public ConnectionSettings(String hostname, int port, String clientId, String username, String password, boolean cleanSession, Message willMessage, int keepAliveSeconds) {
+    public ConnectionSettings(String hostname, int port, String clientId, String username, String password, boolean cleanSession, Message willMessage, int keepAliveSeconds, boolean useTLS) {
         mHostname = hostname;
         mPort = port;
         mClientId = clientId;
@@ -36,6 +39,7 @@ public class ConnectionSettings {
         mCleanSession = cleanSession;
         this.willMessage = willMessage;
         mKeepAliveSeconds = keepAliveSeconds;
+        mUseTLS = useTLS;
     }
 
     public String getHostname() {
@@ -68,6 +72,10 @@ public class ConnectionSettings {
 
     public int getKeepAliveSeconds() {
         return mKeepAliveSeconds;
+    }
+
+    public boolean isUseTLS() {
+        return mUseTLS;
     }
 
     @Override

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.19 (MiKTeX 2.9.6630 64-bit) (preloaded format=pdflatex 2018.6.18)  9 AUG 2018 00:21
+This is pdfTeX, Version 3.14159265-2.6-1.40.19 (MiKTeX 2.9.6630 64-bit) (preloaded format=pdflatex 2018.6.18)  10 AUG 2018 14:42
 entering extended mode
 **./main.tex
 (main.tex
@@ -1174,6 +1174,11 @@ Underfull \hbox (badness 10000) in paragraph at lines 265--267
 
  []
 
+
+Underfull \hbox (badness 10000) in paragraph at lines 269--270
+
+ []
+
 LaTeX Font Info:    Font shape `OML/cmr/m/it' in size <9> not available
 (Font)              Font shape `OML/cmm/m/it' tried instead on input line 279.
 
@@ -1183,13 +1188,13 @@ Underfull \hbox (badness 10000) in paragraph at lines 288--289
 
 [10] [11] (main.aux) ) 
 Here is how much of TeX's memory you used:
- 25144 strings out of 493305
- 618676 string characters out of 3139709
- 866032 words of memory out of 3000000
- 28236 multiletter control sequences out of 15000+200000
+ 25145 strings out of 493305
+ 618684 string characters out of 3139709
+ 867034 words of memory out of 3000000
+ 28237 multiletter control sequences out of 15000+200000
  13560 words of font info for 53 fonts, out of 3000000 for 9000
  1141 hyphenation exceptions out of 8191
- 62i,7n,96p,1521b,896s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 62i,7n,96p,1540b,896s stack positions out of 5000i,500n,10000p,200000b,50000s
 <F:/Programmi (x86)/MiKTeX/fonts/type1/public/amsfonts/cm
 /cmbx10.pfb><F:/Programmi (x86)/MiKTeX/fonts/type1/public/amsfonts/cm/cmbx12.pf
 b><F:/Programmi (x86)/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi9.pfb><F:/Progr
@@ -1200,7 +1205,7 @@ lic/amsfonts/cm/cmr9.pfb><F:/Programmi (x86)/MiKTeX/fonts/type1/public/amsfonts
 /cm/cmsy10.pfb><F:/Programmi (x86)/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy9.
 pfb><F:/Programmi (x86)/MiKTeX/fonts/type1/public/amsfonts/cm/cmti9.pfb><F:/Pro
 grammi (x86)/MiKTeX/fonts/type1/public/amsfonts/cm/cmtt9.pfb>
-Output written on main.pdf (11 pages, 317375 bytes).
+Output written on main.pdf (11 pages, 317809 bytes).
 PDF statistics:
  95 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)

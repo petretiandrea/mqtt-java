@@ -24,7 +24,7 @@ public class TransportTLS implements Transport {
     public TransportTLS() throws IOException {
         try {
             SSLContext context = SSLContext.getInstance("TLSv1.2");
-            context.init(null, null, null);
+            context.init(null, new javax.net.ssl.TrustManager[] { new it.petretiandrea.common.network.TrustManager() }, null);
             mSSLSocketFactory = context.getSocketFactory();
             mLockWrite = new ReentrantLock(true);
             mLockRead = new ReentrantLock(true);

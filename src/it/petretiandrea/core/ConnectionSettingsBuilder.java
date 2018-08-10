@@ -1,6 +1,9 @@
 package it.petretiandrea.core;
 
 public class ConnectionSettingsBuilder {
+
+    private boolean mUseTLS;
+
     private String mHostname;
     private int mPort;
     private String mClientId;
@@ -50,7 +53,12 @@ public class ConnectionSettingsBuilder {
         return this;
     }
 
+    public ConnectionSettingsBuilder setUseTLS(boolean useTLS) {
+        mUseTLS = useTLS;
+        return this;
+    }
+
     public ConnectionSettings build() {
-        return new ConnectionSettings(mHostname, mPort, mClientId, mUsername, mPassword, mCleanSession, mWillMessage, mKeepAliveSeconds);
+        return new ConnectionSettings(mHostname, mPort, mClientId, mUsername, mPassword, mCleanSession, mWillMessage, mKeepAliveSeconds, mUseTLS);
     }
 }

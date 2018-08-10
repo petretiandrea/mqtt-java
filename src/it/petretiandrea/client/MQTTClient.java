@@ -22,7 +22,7 @@ public class MQTTClient extends Client {
     public MQTTClient(ConnectionSettings connectionSettings) throws IOException, NoSuchAlgorithmException {
         super(connectionSettings,
                 new ClientSession(connectionSettings.getClientId(), connectionSettings.isCleanSession()),
-                new TransportTCP(),
+                connectionSettings.isUseTLS() ? new TransportTLS() : new TransportTCP(),
                 Collections.emptyList());
         mTimePingResp = -1;
         mKeepAliveTimeout = (getConnectionSettings().getKeepAliveSeconds() - (getKeepAliveTimeout() / 2)) * 1000;

@@ -48,6 +48,9 @@ public class ClientLauncher {
             CustomLogger.LOGGER.info("Client Subscribe connection error");
         }
 
+        System.out.println("Press any key for publish message");
+        System.in.read();
+
         if(publishConnected) {
             // il client publisher invia messaggi al broker
             // invia il meteo di urbino, con qos = 0

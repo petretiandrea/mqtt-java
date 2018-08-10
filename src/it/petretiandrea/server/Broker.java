@@ -1,5 +1,6 @@
 package it.petretiandrea.server;
 
+import it.petretiandrea.common.network.TransportTLS;
 import it.petretiandrea.utils.CustomLogger;
 import it.petretiandrea.common.*;
 import it.petretiandrea.common.network.Transport;
@@ -14,8 +15,14 @@ import it.petretiandrea.core.packet.*;
 import it.petretiandrea.core.packet.base.MQTTPacket;
 import it.petretiandrea.server.security.AccountManager;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -60,6 +67,8 @@ public class Broker implements MQTTClientCallback {
 
     private Thread mBrokerThread;
 
+    private boolean mUseTLS;
+
     public Broker() {
         this(new AccountManager());
     }
@@ -73,10 +82,30 @@ public class Broker implements MQTTClientCallback {
         mServerSocket = null;
     }
 
+    public void listenTLS(int port) throws IOException {
+        if(!mRunning) {
+            synchronized (mLock)
+            {
+                try {
+                    SSLContext context = SSLContext.getInstance("TLSv1.2");
+                    context.init(null, new TrustManager[] { new it.petretiandrea.common.network.TrustManager() }, null);
+                    mUseTLS = true;
+                    mServerSocket = context.getServerSocketFactory().createServerSocket(port);
+                    mBrokerThread = new Thread(this::connectionLoop);
+                    mBrokerThread.start();
+                    CustomLogger.LOGGER.info("Server running on: " + port);
+                } catch (NoSuchAlgorithmException | KeyManagementException e) {
+                    CustomLogger.LOGGER.severe("Broker: " + e.getMessage());
+                }
+            }
+        }
+    }
+
     public void listen(int port) throws IOException {
         if(!mRunning) {
             synchronized (mLock)
             {
+                mUseTLS = false;
                 mServerSocket = new ServerSocket(port);
                 mBrokerThread = new Thread(this::connectionLoop);
                 mBrokerThread.start();
@@ -103,7 +132,7 @@ public class Broker implements MQTTClientCallback {
     private void connectionLoop() {
         try {
             while (!mServerSocket.isClosed()) {
-                Transport transport = new TransportTCP(mServerSocket.accept());
+                Transport transport = (mUseTLS) ? new TransportTLS(mServerSocket.accept()) : new TransportTCP(mServerSocket.accept());
                 try {
                     MQTTPacket packet = transport.readPacket(TIMEOUT_CONNECT);
                     if(packet.getCommand() == MQTTPacket.Type.CONNECT) {
@@ -118,7 +147,7 @@ public class Broker implements MQTTClientCallback {
                             // restore the subscribed topics
                             session.getSubscriptions().forEach(subscribe -> mSubscribeManager.subscribe(session.getClientID(), subscribe));
 
-                            ClientBroker clientBroker = new ClientBroker(ConnectionSettings.from(connect), session,
+                            ClientBroker clientBroker = new ClientBroker(ConnectionSettings.from(connect, mUseTLS), session,
                                     transport, new ArrayList<>(session.getPendingPublish()));
 
                             addConnectedClient(clientBroker);
