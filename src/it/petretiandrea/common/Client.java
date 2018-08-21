@@ -316,7 +316,8 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
                 .findFirst()
                 .ifPresent(packet -> {
                     mPendingQueue.add(new PubComp(pubRel.getMessageID()));
-                    mClientCallback.onMessageArrived(this, ((Publish) packet).getMessage());
+                    if(mClientCallback != null)
+                        mClientCallback.onMessageArrived(this, ((Publish) packet).getMessage());
                 });
     }
 
