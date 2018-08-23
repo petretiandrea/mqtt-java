@@ -14,6 +14,8 @@ import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 public abstract class Client implements PacketDispatcher.IPacketReceiver {
 
@@ -291,26 +293,38 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
 
     @Override
     public void onPubAckReceive(PubAck pubAck) {
-        CustomLogger.LOGGER.info(getClientSession().getClientID() + " PubAck Received " + pubAck);
+        CustomLogger.LOGGER.info(getClientSession().getClientID() + ", PubAck Received, id: " + pubAck.getMessageID());
+        Publish publish = (Publish) getClientSession().getSendedNotAck()
+                .stream()
+                .filter(packet -> (packet instanceof Publish) && ((Publish)packet).getMessage().getMessageID() == pubAck.getMessageID())
+                .findFirst()
+                .orElse(null);
         boolean removed = getClientSession().getSendedNotAck()
                 .removeIf(packet -> (packet instanceof Publish) && ((Publish)packet).getMessage().getMessageID() == pubAck.getMessageID());
-        if(removed && mClientCallback != null)
-            mClientCallback.onDeliveryComplete(this, pubAck.getMessageID());
+        if(removed && publish != null && mClientCallback != null)
+            mClientCallback.onDeliveryComplete(this, publish);
     }
 
     @Override
     public void onPubRecReceive(PubRec pubRec) {
-        CustomLogger.LOGGER.info(getClientSession().getClientID() + " PubRec Received " + pubRec);
+        CustomLogger.LOGGER.info(getClientSession().getClientID() + ", PubRec Received, id: " + pubRec.getMessageID());
+
+        // no remove publish packet of qos 2 process
         getClientSession().getSendedNotAck()
-                .removeIf(packet -> (packet instanceof Publish) && ((Publish)packet).getMessage().getMessageID() == pubRec.getMessageID());
-        // store pubrec
-        getClientSession().getReceivedNotAck().add(pubRec);
-        mPendingQueue.add(new PubRel(pubRec.getMessageID()));
+                .stream()
+                .filter(packet -> (packet instanceof Publish) && ((Publish)packet).getMessage().getMessageID() == pubRec.getMessageID())
+                .findAny()
+                .ifPresent(packet -> {
+                    // publish is present inside the queue to be acked
+                    // store pubrec
+                    getClientSession().getReceivedNotAck().add(pubRec);
+                    mPendingQueue.add(new PubRel(pubRec.getMessageID()));
+                });
     }
 
     @Override
     public void onPubRelReceive(PubRel pubRel) {
-        CustomLogger.LOGGER.info(getClientSession().getClientID() + " PubRel Received " + pubRel);
+        CustomLogger.LOGGER.info(getClientSession().getClientID() + ", PubRel Received, " + pubRel.getMessageID());
         getClientSession().getReceivedNotAck().stream()
                 .filter(packet -> (packet instanceof  Publish) && ((Publish)packet).getMessage().getMessageID() == pubRel.getMessageID())
                 .findFirst()
@@ -323,10 +337,19 @@ public abstract class Client implements PacketDispatcher.IPacketReceiver {
 
     @Override
     public void onPubCompReceive(PubComp pubComp) {
-        CustomLogger.LOGGER.info(getClientSession().getClientID() + " PubComp Received " + pubComp);
+        CustomLogger.LOGGER.info(getClientSession().getClientID() + ", PubComp Received, id: " + pubComp.getMessageID());
+        // remove pubrec
         boolean removed = getClientSession().getReceivedNotAck()
                 .removeIf(packet -> (packet instanceof PubRec) && ((PubRec)packet).getMessageID() == pubComp.getMessageID());
-        if(removed && mClientCallback != null)
-            mClientCallback.onDeliveryComplete(this, pubComp.getMessageID());
+        // remove publish message
+        Publish pub = (Publish) getClientSession().getSendedNotAck().stream()
+                .filter(packet -> (packet instanceof Publish) && ((Publish)packet).getMessage().getMessageID() == pubComp.getMessageID())
+                .findFirst()
+                .orElse(null);
+
+        getClientSession().getSendedNotAck().removeIf(packet -> (packet instanceof Publish) && ((Publish)packet).getMessage().getMessageID() == pubComp.getMessageID());
+
+        if(removed && pub != null && mClientCallback != null)
+            mClientCallback.onDeliveryComplete(this, pub);
     }
 }

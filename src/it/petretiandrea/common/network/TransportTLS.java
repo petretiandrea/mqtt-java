@@ -2,12 +2,15 @@ package it.petretiandrea.common.network;
 
 import it.petretiandrea.core.exception.MQTTParseException;
 import it.petretiandrea.core.packet.base.MQTTPacket;
+import it.petretiandrea.server.security.SSLContextProvider;
+import it.petretiandrea.server.security.TLSProvider;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.locks.ReentrantLock;
@@ -21,14 +24,14 @@ public class TransportTLS implements Transport {
 
     private SSLSocketFactory mSSLSocketFactory;
 
-    public TransportTLS() throws IOException {
+    public TransportTLS(SSLContextProvider contextProvider) throws IOException {
         try {
-            SSLContext context = SSLContext.getInstance("TLSv1.2");
-            context.init(null, new javax.net.ssl.TrustManager[] { new it.petretiandrea.common.network.TrustManager() }, null);
+            SSLContext context = SSLContext.getInstance(contextProvider.getProtocol());
+            context.init(contextProvider.getKeyManagers(), contextProvider.getTrustManagers(), null);
             mSSLSocketFactory = context.getSocketFactory();
             mLockWrite = new ReentrantLock(true);
             mLockRead = new ReentrantLock(true);
-        } catch (NoSuchAlgorithmException | KeyManagementException e) {
+        } catch (GeneralSecurityException e) {
             e.printStackTrace();
         }
     }

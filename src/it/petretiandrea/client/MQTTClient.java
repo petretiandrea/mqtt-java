@@ -19,10 +19,10 @@ public class MQTTClient extends Client {
     private long mKeepAliveTimeout;
     private long mTimePingResp;
 
-    public MQTTClient(ConnectionSettings connectionSettings) throws IOException, NoSuchAlgorithmException {
+    public MQTTClient(ConnectionSettings connectionSettings) throws IOException {
         super(connectionSettings,
                 new ClientSession(connectionSettings.getClientId(), connectionSettings.isCleanSession()),
-                connectionSettings.isUseTLS() ? new TransportTLS() : new TransportTCP(),
+                connectionSettings.isUseSSLTLS() ? new TransportTLS(connectionSettings.getSSLContextProvider()) : new TransportTCP(),
                 Collections.emptyList());
         mTimePingResp = -1;
         mKeepAliveTimeout = (getConnectionSettings().getKeepAliveSeconds() - (getKeepAliveTimeout() / 2)) * 1000;

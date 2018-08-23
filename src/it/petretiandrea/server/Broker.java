@@ -1,6 +1,8 @@
 package it.petretiandrea.server;
 
 import it.petretiandrea.common.network.TransportTLS;
+import it.petretiandrea.server.security.SSLContextProvider;
+import it.petretiandrea.server.security.TLSProvider;
 import it.petretiandrea.utils.CustomLogger;
 import it.petretiandrea.common.*;
 import it.petretiandrea.common.network.Transport;
@@ -20,6 +22,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
@@ -67,7 +70,7 @@ public class Broker implements MQTTClientCallback {
 
     private Thread mBrokerThread;
 
-    private boolean mUseTLS;
+    private SSLContextProvider mSSLContextProvider;
 
     public Broker() {
         this(new AccountManager());
@@ -82,20 +85,22 @@ public class Broker implements MQTTClientCallback {
         mServerSocket = null;
     }
 
-    public void listenTLS(int port) throws IOException {
+    public void listenTLS(TLSProvider provider, int port) throws IOException {
         if(!mRunning) {
             synchronized (mLock)
             {
                 try {
-                    SSLContext context = SSLContext.getInstance("TLSv1.2");
-                    context.init(null, new TrustManager[] { new it.petretiandrea.common.network.TrustManager() }, null);
-                    mUseTLS = true;
+                    SSLContext context = SSLContext.getInstance(provider.getProtocol());
+                    context.init(provider.getKeyManagers(), provider.getTrustManagers(), null);
+                    mSSLContextProvider = provider;
                     mServerSocket = context.getServerSocketFactory().createServerSocket(port);
                     mBrokerThread = new Thread(this::connectionLoop);
                     mBrokerThread.start();
                     CustomLogger.LOGGER.info("Server running on: " + port);
                 } catch (NoSuchAlgorithmException | KeyManagementException e) {
                     CustomLogger.LOGGER.severe("Broker: " + e.getMessage());
+                } catch (GeneralSecurityException e) {
+                    e.printStackTrace();
                 }
             }
         }
@@ -105,7 +110,7 @@ public class Broker implements MQTTClientCallback {
         if(!mRunning) {
             synchronized (mLock)
             {
-                mUseTLS = false;
+                mSSLContextProvider = null;
                 mServerSocket = new ServerSocket(port);
                 mBrokerThread = new Thread(this::connectionLoop);
                 mBrokerThread.start();
@@ -132,7 +137,7 @@ public class Broker implements MQTTClientCallback {
     private void connectionLoop() {
         try {
             while (!mServerSocket.isClosed()) {
-                Transport transport = (mUseTLS) ? new TransportTLS(mServerSocket.accept()) : new TransportTCP(mServerSocket.accept());
+                Transport transport = (mSSLContextProvider != null) ? new TransportTLS(mServerSocket.accept()) : new TransportTCP(mServerSocket.accept());
                 try {
                     MQTTPacket packet = transport.readPacket(TIMEOUT_CONNECT);
                     if(packet.getCommand() == MQTTPacket.Type.CONNECT) {
@@ -147,7 +152,7 @@ public class Broker implements MQTTClientCallback {
                             // restore the subscribed topics
                             session.getSubscriptions().forEach(subscribe -> mSubscribeManager.subscribe(session.getClientID(), subscribe));
 
-                            ClientBroker clientBroker = new ClientBroker(ConnectionSettings.from(connect, mUseTLS), session,
+                            ClientBroker clientBroker = new ClientBroker(ConnectionSettings.from(connect, mSSLContextProvider), session,
                                     transport, new ArrayList<>(session.getPendingPublish()));
 
                             addConnectedClient(clientBroker);
@@ -264,8 +269,12 @@ public class Broker implements MQTTClientCallback {
 
     @Override
     public void onMessageArrived(Client client, Message message) {
-        CustomLogger.LOGGER.info("Broker: Message Received from " + client.getClientSession().getClientID()
-                + " " + message);
+        CustomLogger.LOGGER.info(String.format("Broker, Message Received, Client: %s, Topic: %s, Content: %s, Qos: %d, Retain: %b",
+                client.getClientSession().getClientID(),
+                message.getTopic(),
+                message.getMessage(),
+                message.getQos().ordinal(),
+                message.isRetain()));
 
         Qos receivedQos = message.getQos();
 
@@ -301,20 +310,24 @@ public class Broker implements MQTTClientCallback {
     }
 
     @Override
-    public void onDeliveryComplete(Client client, int messageId) {
-        CustomLogger.LOGGER.info("Broker: Message delivered with message id " + messageId);
+    public void onDeliveryComplete(Client client, Publish publish) {
+        CustomLogger.LOGGER.info(String.format("Broker, Delivery complete, Topic: %s, Message: %s, Qos: %s, Message id: %d",
+                publish.getMessage().getTopic(),
+                publish.getMessage().getMessage(),
+                publish.getMessage().getQos(),
+                publish.getMessage().getMessageID()));
     }
 
     @Override
     public void onConnectionLost(Client client, Throwable ex) {
-        CustomLogger.LOGGER.info("Broker: Connection Lost with " + client.getClientSession().getClientID());
+        CustomLogger.LOGGER.info("Broker, Connection Lost, Client: " + client.getClientSession().getClientID());
         // same action of onDisconnect
         closeClientConnection(client);
     }
 
     @Override
     public void onDisconnect(Client client) {
-        CustomLogger.LOGGER.info("Broker: Disconnect " + client.getClientSession().getClientID());
+        CustomLogger.LOGGER.info("Broker, Disconnect, Client: " + client.getClientSession().getClientID());
         closeClientConnection(client);
     }
 
@@ -328,7 +341,9 @@ public class Broker implements MQTTClientCallback {
 
     @Override
     public void onUnsubscribeComplete(Client client, Unsubscribe unsubscribe) {
-        CustomLogger.LOGGER.info("Broker: Unsubscribe from " + client.getClientSession().getClientID() + " " + unsubscribe);
+        CustomLogger.LOGGER.info(String.format("Broker, Unsubscribe complete, Client: %s, Topic: %s",
+                client.getClientSession().getClientID(),
+                unsubscribe.getTopic()));
         mSubscribeManager.unsubscribe(client.getClientSession().getClientID(), unsubscribe);
     }
 

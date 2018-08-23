@@ -36,7 +36,7 @@ public class ClientBroker extends Client {
 
     @Override
     protected void onKeepAliveTimeout() throws MQTTProtocolException {
-        CustomLogger.LOGGER.info("Broker: Client " + getClientSession().getClientID() + " timeout expired!");
+        CustomLogger.LOGGER.info("Broker, Timeout expired, Client: " + getClientSession().getClientID());
         throw new MQTTProtocolException("No Response from Client!");
     }
 
@@ -58,12 +58,17 @@ public class ClientBroker extends Client {
     @Override
     public void onSubscribeReceive(Subscribe subscribe) throws MQTTProtocolException {
         if(TopicMatcher.isValidSubscribeTopic(subscribe.getTopic())) {
-            CustomLogger.LOGGER.info("Broker: Subscribe received from " + getClientSession().getClientID() + " " + subscribe);
+            CustomLogger.LOGGER.info(String.format("Broker, Subscribe received, Client: %s, Topic: %s, Qos: %d",
+                    getClientSession().getClientID(),
+                    subscribe.getTopic(),
+                    subscribe.getQosSub().ordinal()));
+
             send(new SubAck(subscribe.getMessageID(), subscribe.getQosSub()));
             if(getClientCallback() != null)
                 getClientCallback().onSubscribeComplete(this, subscribe);
         } else {
-            CustomLogger.LOGGER.severe("Broker: Invalid subscribe topic received from " + getClientSession().getClientID());
+            CustomLogger.LOGGER.severe(String.format("Broker, Invalid subscrive, Client %s",
+                    getClientSession().getClientID()));
             send(new SubAck(subscribe.getMessageID(), subscribe.getQosSub(), true));
         }
 
@@ -88,7 +93,7 @@ public class ClientBroker extends Client {
 
     @Override
     public void onPingReqReceive(PingReq pingReq) {
-        CustomLogger.LOGGER.info("Broker: Ping Request from " + getClientSession().getClientID());
+        CustomLogger.LOGGER.info(String.format("Broker, Ping Request, Client: %s", getClientSession().getClientID()));
         send(new PingResp());
     }
 

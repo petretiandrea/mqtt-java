@@ -28,4 +28,10 @@ public class CustomLogger {
         LOGGER = mainLogger;
     }
 
+
+    public static synchronized void log(String message) {
+        String log = new Date() + " ---- " + ": " + message;
+        System.out.println(log);
+        System.out.flush();
+    }
 }

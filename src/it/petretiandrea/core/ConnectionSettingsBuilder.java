@@ -1,8 +1,10 @@
 package it.petretiandrea.core;
 
+import it.petretiandrea.server.security.SSLContextProvider;
+
 public class ConnectionSettingsBuilder {
 
-    private boolean mUseTLS;
+    private SSLContextProvider mSSLContextProvider;
 
     private String mHostname;
     private int mPort;
@@ -53,12 +55,12 @@ public class ConnectionSettingsBuilder {
         return this;
     }
 
-    public ConnectionSettingsBuilder setUseTLS(boolean useTLS) {
-        mUseTLS = useTLS;
+    public ConnectionSettingsBuilder setSSLContextProvider(SSLContextProvider sslContextProvider) {
+        mSSLContextProvider = sslContextProvider;
         return this;
     }
 
     public ConnectionSettings build() {
-        return new ConnectionSettings(mHostname, mPort, mClientId, mUsername, mPassword, mCleanSession, mWillMessage, mKeepAliveSeconds, mUseTLS);
+        return new ConnectionSettings(mHostname, mPort, mClientId, mUsername, mPassword, mCleanSession, mWillMessage, mKeepAliveSeconds, mSSLContextProvider);
     }
 }

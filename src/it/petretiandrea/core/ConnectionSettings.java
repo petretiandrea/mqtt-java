@@ -1,7 +1,9 @@
 package it.petretiandrea.core;
 
+import com.sun.org.apache.regexp.internal.RE;
 import it.petretiandrea.core.Message;
 import it.petretiandrea.core.packet.Connect;
+import it.petretiandrea.server.security.SSLContextProvider;
 
 public class ConnectionSettings {
 
@@ -14,9 +16,12 @@ public class ConnectionSettings {
     private Message willMessage;
     private int mKeepAliveSeconds;
 
-    private boolean mUseTLS;
+    /**
+     * Is null if no tls/ssl
+     */
+    private SSLContextProvider mSSLContextProvider;
 
-    public static ConnectionSettings from(Connect connect, boolean useTLS) {
+    public static ConnectionSettings from(Connect connect, SSLContextProvider sslContextProvider) {
         return new ConnectionSettings(
                 "",
                 0,
@@ -26,11 +31,11 @@ public class ConnectionSettings {
                 connect.isCleanSession(),
                 connect.getWillMessage(),
                 connect.getKeepAliveSeconds(),
-                useTLS
+                sslContextProvider
         );
     }
 
-    public ConnectionSettings(String hostname, int port, String clientId, String username, String password, boolean cleanSession, Message willMessage, int keepAliveSeconds, boolean useTLS) {
+    public ConnectionSettings(String hostname, int port, String clientId, String username, String password, boolean cleanSession, Message willMessage, int keepAliveSeconds, SSLContextProvider contextProvider) {
         mHostname = hostname;
         mPort = port;
         mClientId = clientId;
@@ -39,7 +44,7 @@ public class ConnectionSettings {
         mCleanSession = cleanSession;
         this.willMessage = willMessage;
         mKeepAliveSeconds = keepAliveSeconds;
-        mUseTLS = useTLS;
+        mSSLContextProvider = contextProvider;
     }
 
     public String getHostname() {
@@ -74,8 +79,12 @@ public class ConnectionSettings {
         return mKeepAliveSeconds;
     }
 
-    public boolean isUseTLS() {
-        return mUseTLS;
+    public SSLContextProvider getSSLContextProvider() {
+        return mSSLContextProvider;
+    }
+
+    public boolean isUseSSLTLS() {
+        return mSSLContextProvider != null;
     }
 
     @Override

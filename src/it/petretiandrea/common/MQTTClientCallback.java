@@ -1,13 +1,14 @@
 package it.petretiandrea.common;
 
 import it.petretiandrea.core.Message;
+import it.petretiandrea.core.packet.Publish;
 import it.petretiandrea.core.packet.Subscribe;
 import it.petretiandrea.core.packet.Unsubscribe;
 
 public interface MQTTClientCallback {
 
     void onMessageArrived(Client client, Message message);
-    void onDeliveryComplete(Client client, int messageId);
+    void onDeliveryComplete(Client client, Publish publish);
     void onConnectionLost(Client client, Throwable ex);
     void onDisconnect(Client client);
     void onSubscribeComplete(Client client, Subscribe subscribe);
