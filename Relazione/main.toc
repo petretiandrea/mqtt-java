@@ -10,4 +10,5 @@
 \contentsline {section}{\numberline {4}Implementazione Java}{7}
 \contentsline {subsection}{\numberline {4.1}Broker}{9}
 \contentsline {subsection}{\numberline {4.2}Client}{10}
-\contentsline {section}{\numberline {5}Conclusioni}{10}
+\contentsline {subsection}{\numberline {4.3}Utilizzo e Testing}{11}
+\contentsline {section}{\numberline {5}Conclusioni}{12}
